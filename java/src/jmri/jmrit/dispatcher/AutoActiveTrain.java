@@ -1214,7 +1214,7 @@ public class AutoActiveTrain implements ThrottleListener {
             return;
         }
         log.debug("{}: StopInCurrentSection called for {} task[{}] targetspeed[{}]", _activeTrain.getTrainName(), _currentAllocatedSection.getSection().getDisplayName(USERSYS),task,getTargetSpeed());
-        if (getTargetSpeed() == 0.0f || isStopping()) {
+        if (/*getTargetSpeed() == 0.0f ||*/ isStopping()) {
             log.debug("{}: train is already stopped or stopping.", _activeTrain.getTrainName());
             // ignore if train is already stopped or if stopping is in progress
             return;
@@ -1226,6 +1226,7 @@ public class AutoActiveTrain implements ThrottleListener {
             _stopSensor = _currentAllocatedSection.getSection().getReverseStoppingSensor();
         }
         if (_stopSensor != null) {
+            log.debug("stop sensor = {}", _stopSensor.getUserName());
             if (_stopSensor.getKnownState() == Sensor.ACTIVE) {
                 // stop sensor is already active, stop now
                 setStopNow();
@@ -1486,6 +1487,8 @@ public class AutoActiveTrain implements ThrottleListener {
         try {
             signalSpeed = InstanceManager.getDefault(SignalSpeedMap.class)
                     .getSpeed(InstanceManager.getDefault(DispatcherFrame.class).getStoppingSpeedName());
+            log.debug("got [{}] from Speed table - defaulting to it {}",
+                    InstanceManager.getDefault(DispatcherFrame.class).getStoppingSpeedName(), signalSpeed);
         } catch (IllegalArgumentException ex) {
             log.error("Missing [{}] from Speed table - defaulting to 25",
                     InstanceManager.getDefault(DispatcherFrame.class).getStoppingSpeedName());

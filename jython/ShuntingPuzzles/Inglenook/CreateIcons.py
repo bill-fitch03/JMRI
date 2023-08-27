@@ -56,28 +56,19 @@ class processPanels():
             self.removeIconsAndLabels()
             self.show_progress(20)
             self.removeLogix()
-            # self.removeTransits()
-            # self.removeSections()
-            # self.removeSML()
-            # self.show_progress(30)
             self.removeSensors()
             self.show_progress(30)
-
             self.get_list_of_inglenook_sidings()
             self.show_progress(50)
             self.addSensors()
-
-            # self.generateSML()
             self.show_progress(60)
-            # self.generateSections()
-
             self.addLogix()    #allows the system to start up
-            self.addLogixNG()
+            # self.addLogixNG()
             self.show_progress(70)
             self.addIcons()
             self.end_show_progress()
-            #msg = 'The JMRI tables and panels have been udpated to support the Dispatcher System\nA store is recommended.'
-            #JOptionPane.showMessageDialog(None, msg, 'Message', JOptionPane.WARNING_MESSAGE)
+            msg = 'The JMRI tables and panels have been updated to support the Inglenook Siding System\nA store is recommended.'
+            JOptionPane.showMessageDialog(None, msg, 'Message', JOptionPane.WARNING_MESSAGE)
 
     def define_DisplayProgress_global(self):
         global dpg
@@ -153,13 +144,13 @@ class processPanels():
         msg =  ""
         some_checks_OK = False
         if sensors_OK:
-            msg = msg + "All blocks have lengths\n"
+            msg = msg + "all_stop_sensors_are_set_up\n"
             some_checks_OK = True
         if block_sensors_OK:
-            msg = msg + "All blocks have lengths\n"
+            msg = msg + "all truck_indicators_are_set_up\n"
             some_checks_OK = True
         if some_checks_OK:
-            msg = "Performed some prelimiary checks to ensure the trains run correctly\n\nAll Checks OK"
+            msg = "Performed some preliminary checks to ensure the trains run correctly\n\nAll Checks OK"
             reply = Query().customQuestionMessage2(msg, "Checks", "Continue", "Look in more detail")
             print "reply=", reply
             if reply == JOptionPane.NO_OPTION:
@@ -182,19 +173,9 @@ class processPanels():
         LayoutBlockManager=jmri.InstanceManager.getDefault(jmri.jmrit.display.layoutEditor.LayoutBlockManager)
         list_of_errors = []
         success = True
-        # for block in blocks.getNamedBeanSet():
-        #     if block.getSensor() == None:
-        #         if LayoutBlockManager.getLayoutBlock(block) != None:    #only include blocks included in a layout panel
-        #             if block.getUserName() != None:                     #all layout blocks have usernames, should not need this check
-        #                 msg = "block {} does not have a sensor".format(block.getUserName())
-        #             else:
-        #                 msg = "block {} does not have a sensor".format(block.getSystemName())
-        #                 msg = msg + "\nblock {} does not have a username".format(block.getSystemName())
-        #             list_of_errors.append(msg)
-        #             self.msg = ""
-        #             for message in list_of_errors:
-        #                 self.msg = self.msg +"\n" + message
-        #             success = False
+
+
+
         return success
 
     def check_truck_indicators_are_set_up(self):
@@ -358,6 +339,10 @@ class processPanels():
                 #     # block sensors
                 #     if sensor in blockSensors:
                 #         deleteList.append(icon)
+                comment = sensor.getComment()
+                if comment is not None:
+                    if '#IS_siding' in comment or '#IS_spur' in comment:
+                        deleteList.append(icon)
 
         for item in deleteList:
             panel.removeFromContents(item)
@@ -368,42 +353,13 @@ class processPanels():
     def removeLogix(self):
         logixManager = jmri.InstanceManager.getDefault(jmri.LogixManager)
         logix = logixManager.getLogix('Run Inglenook')
+        cdlManager = jmri.InstanceManager.getDefault(jmri.ConditionalManager)
+        cdl = cdlManager.getConditional(logix, 'Run Inglenook')
         if logix is not None:
             logixManager.deleteLogix(logix)
 
-    # # **************************************************
-    # # remove Transits
-    # # **************************************************
-    # def removeTransits(self):
-    #     deleteList = []     # Prevent concurrent modification
-    #     for transit in transits.getNamedBeanSet():
-    #         deleteList.append(transit)
-    #
-    #     for item in deleteList:
-    #         transits.deleteBean(item, 'DoDelete')
-    #
-    # # **************************************************
-    # # remove Sections
-    # # **************************************************
-    # def removeSections(self):
-    #     deleteList = []     # Prevent concurrent modification
-    #     for section in sections.getNamedBeanSet():
-    #         deleteList.append(section)
-    #
-    #     for item in deleteList:
-    #         sections.deleteBean(item, 'DoDelete')
-    #
-    # # **************************************************
-    # # remove signal mast logic
-    # # **************************************************
-    # def removeSML(self):
-    #     smlManger = jmri.InstanceManager.getDefault(jmri.SignalMastLogicManager)
-    #     deleteList = []     # Prevent concurrent modification
-    #     for sml in smlManger.getNamedBeanSet():
-    #         deleteList.append(sml)
-    #
-    #     for item in deleteList:
-    #         smlManger.deleteBean(item, 'DoDelete')
+        if cdl is not None:
+            cdlManager.deleteConditional(cdl)
 
     # **************************************************
     # remove sensors
@@ -421,11 +377,15 @@ class processPanels():
         deleteList = []     # Prevent concurrent modification
         for sensor in sensors.getNamedBeanSet():
             userName = sensor.getUserName()
+            comment = sensor.getComment()
             if userName is not None:
                 if 'TruckIndication' in userName or 'Decoupling' in userName:
                     deleteList.append(sensor)
                 elif userName in controlName:
                     deleteList.append(sensor)
+            # if comment is not None:
+            #     if '#IS_siding' in comment or '#IS_spur' in comment:
+            #         deleteList.append(sensor)
 
         for item in deleteList:
             print 'remove sensor {}'.format(item.getDisplayName())
@@ -446,18 +406,18 @@ class processPanels():
         for block in blocks.getNamedBeanSet():
             comment = block.getComment()
             if comment != None:
-                if "ingsiding" in comment.lower():
+                if "#IS_block_" in comment:
                     blockname = block.getUserName()
-                    if "ingsiding1" in comment.lower():
-                        self.add_truck_blocks(blockname, 3, "1")
-                    elif "ingsiding2" in comment.lower():
-                        self.add_truck_blocks(blockname, 3, "2")
-                    elif "ingsiding3" in comment.lower():
-                        self.add_truck_blocks(blockname, 5, "3")
-                    elif "ingsidingmid" in comment.lower():
-                        self.add_truck_blocks(blockname, 3, "mid")
-                    elif "ingsidingspur" in comment.lower():
-                        self.add_truck_blocks(blockname, 3, "spur")
+                    if "#IS_block_siding1#" in comment:
+                        self.add_truck_blocks(blockname, 6, "1")
+                    elif "#IS_block_siding2#" in comment:
+                        self.add_truck_blocks(blockname, 6, "2")
+                    elif "#IS_block_siding3#" in comment:
+                        self.add_truck_blocks(blockname, 8, "3")
+                    # elif "#IS_block_mid#" in comment:
+                    #     self.add_truck_blocks(blockname, 3, "mid")
+                    elif "#IS_block_spur#" in comment:
+                        self.add_truck_blocks(blockname, 4, "spur")
                     else:
                         pass
                     #self.list_of_inglenook_sidings.append(block.getUserName())
@@ -467,7 +427,9 @@ class processPanels():
 
         if len(self.list_of_inglenook_sidings) == 0:
             print "sidings have not been set up"
-            #need a mesgbox here
+            return
+            #need a messagebox here
+        print "sidings have been set up", self.list_of_inglenook_sidings
 
     def add_truck_blocks(self, block_name, number_blocks, siding_name):
 
@@ -530,17 +492,19 @@ class processPanels():
         lgxManager = jmri.InstanceManager.getDefault(jmri.LogixManager)
         cdlManager = jmri.InstanceManager.getDefault(jmri.ConditionalManager)
         lgx = lgxManager.createNewLogix('IX:ISLX:1', 'Run Inglenook')
-        cdl = cdlManager.createNewConditional('IX:ISLX:1C1', 'Run Inglenook')
-        if lgx.addConditional('IX:ISLX:1C1', 0):
-            if cdl is not None:
-                cdl.setUserName('Run Inglenook')
-                vars = []
-                vars.append(jmri.ConditionalVariable(False, jmri.Conditional.Operator.AND, jmri.Conditional.Type.SENSOR_ACTIVE, 'startInglenookSensor', True))
-                cdl.setStateVariables(vars)
-                actions = []
-                actions.append(jmri.implementation.DefaultConditionalAction(1, jmri.Conditional.Action.RUN_SCRIPT, '', -1, 'program:jython/ShuntingPuzzles/Inglenook/RunInglenook.py'))
-                cdl.setAction(actions)
-                lgx.activateLogix()
+        cdl = cdlManager.createNewConditional('IX:ISLX:1C2', 'Run Inglenook')
+        if cdl is not None:
+            print "cnd is not none"
+            cdl.setUserName('Run Inglenook')
+            vars = []
+            vars.append(jmri.ConditionalVariable(False, jmri.Conditional.Operator.AND, jmri.Conditional.Type.SENSOR_ACTIVE, 'startInglenookSensor', True))
+            cdl.setStateVariables(vars)
+            actions = []
+            actions.append(jmri.implementation.DefaultConditionalAction(1, jmri.Conditional.Action.RUN_SCRIPT, '', -1, 'program:jython/ShuntingPuzzles/Inglenook/RunInglenook.py'))
+            cdl.setAction(actions)
+
+        lgx.addConditional('IX:ISLX:1C2', 0)
+        lgx.activateLogix()
 
     def addLogixNG(self):
         lgxNGManager = jmri.InstanceManager.getDefault(jmri.jmrit.logixng.LogixNG_Manager)
@@ -553,14 +517,18 @@ class processPanels():
     # add Icons
     # **************************************************
     def addIcons(self):
+        print "in addIcons"
         for panel in self.editorManager.getAll(jmri.jmrit.display.layoutEditor.LayoutEditor):
             # self.getBlockCenterPoints(panel)
             #
             # self.addStopIcons(panel)
             # self.addOccupancyIconsAndLabels(panel)
             self.addControlIconsAndLabels(panel)
+            print "added control icons"
             self.getSidingBlockCenterPoints(panel)
+            print "added SidingBlockCenterPoints"
             self.direction = self.checkOrientationOfPuzzle(panel)
+            print "added checkOrientationOfPuzzle", self.direction
             if self.direction != None:
                 print "***************direction", self.direction
                 self.addTruckIcons(panel)
@@ -572,7 +540,7 @@ class processPanels():
         for block in blocks.getNamedBeanSet():
             if LayoutBlockManager.getLayoutBlock(block) != None:    #only include blocks included in a layout panel
                 if block.getComment() != None:
-                    if "ingsiding1" in block.getComment():  # check the first siding which has a buffer
+                    if "#IS_block_siding1" in block.getComment():  # check the first siding which has a buffer
                         layoutblock = LayoutBlockManager.getLayoutBlock(block)
                         no_neighbours = layoutblock.getNumberOfNeighbours()
                         if no_neighbours == 1:  #there should only be one neighbour at ingsiding1
@@ -641,7 +609,9 @@ class processPanels():
             direction = "east"
         else:
             direction = "west"  # 128
+        print "direction", direction
         for [blockName, number_blocks, siding_name] in self.list_of_inglenook_sidings:
+            print [blockName, number_blocks, siding_name]
             if blockName in self.blockPoints.keys():
                 x = self.blockPoints[blockName].getX()
                 y = self.blockPoints[blockName].getY()
@@ -655,13 +625,15 @@ class processPanels():
                             direction1 = "west"
                         else:
                             direction1 = "east"
+                    spacing = 40
                     if direction1 == "west":
-                        beginning = (-80 * number_blocks)/2
-                        offset = 80 * i
+                        beginning = (-spacing * number_blocks)/2
+                        offset = spacing * i
                     else:
-                        beginning = (80 * number_blocks)/2 - 80
-                        offset = -80 * i
+                        beginning = (spacing * number_blocks)/2 - spacing
+                        offset = -spacing * i
                     offset = beginning + offset
+                    print "sensor_name", 'TruckIndication_' + sensor_name
                     mtSensor = sensors.getSensor('TruckIndication_' + sensor_name )
                     if mtSensor is not None:
                         print "add", mtSensor.getUserName(), x, y
@@ -677,12 +649,18 @@ class processPanels():
                     print "*****************siding", siding, "siding_name", siding_name
                     mpSensor = self.get_decoupling_sensor(siding)
                     if mpSensor is not None:
-                        if i == number_blocks-2:
+                        if i == number_blocks-4:
                             # print "add", mpSensor.getUserName(), x, y
+                            print "direction1", direction1
                             if direction1 == "west":
-                                self.addSmallIcon(panel, mpSensor.getDisplayName(), x + offset - 10 + 70, y-25)
+                                # if siding_name != 'sensor_spur':
+                                self.addSmallIcon(panel, mpSensor.getDisplayName(), x + offset  + 0.8*spacing , y-18)
+                                # else:
+                                #     self.addSmallIcon(panel, mpSensor.getDisplayName(), x + offset  + spacing/4 , y-18)
                             else:
-                                self.addSmallIcon(panel, mpSensor.getDisplayName(), x + offset - 10, y-25)
+                                # self.addSmallIcon(panel, mpSensor.getDisplayName(), x + offset/2 , y-20)
+                                # self.addSmallIcon(panel, mpSensor.getDisplayName(), x , y-20)
+                                self.addSmallIcon(panel, mpSensor.getDisplayName(), x + offset - 0.2*spacing , y-18)
 
     def get_decoupling_sensor(self, sensor_comment):
         for sensor in sensors.getNamedBeanSet():
@@ -773,16 +751,18 @@ class processPanels():
     def addMarkerIcon(self, panel, sensor, blockName, x, y, No):
         print "addmarkericon"
         icn = jmri.jmrit.display.SensorIcon(panel)
-        truck_icon = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/icons/truck.gif')
+        truck_icon = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/icons/truck6.gif')
+        null_icon = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/icons/null.gif')
 
         # icn.setIcon("SensorStateActive", jmri.jmrit.catalog.NamedIcon("resources/icons/markers/loco-green.gif", "active"));
-        icn.setIcon("SensorStateInactive", jmri.jmrit.catalog.NamedIcon("resources/icons/markers/loco-red.gif", "inactive"));
+        icn.setIcon("SensorStateInactive", jmri.jmrit.catalog.NamedIcon("resources/icons/throttles/RoundRedCircle20.png", "inactive"))
+        # icn.setIcon("SensorStateInactive", jmri.jmrit.catalog.NamedIcon(null_icon, "inactive"))
         # icn.setIcon("BeanStateInconsistent", jmri.jmrit.catalog.NamedIcon("resources/icons/markers/loco-yellow.gif", "incons"));
         # icn.setIcon("BeanStateUnknown", jmri.jmrit.catalog.NamedIcon("resources/icons/markers/loco-gray.gif", "unknown"));
         icn.setIcon("SensorStateActive", jmri.jmrit.catalog.NamedIcon(truck_icon, "active"));
         #icn.setIcon("SensorStateInactive", jmri.jmrit.catalog.NamedIcon("", "inactive"));
-        icn.setIcon("BeanStateInconsistent", jmri.jmrit.catalog.NamedIcon(truck_icon, "incons"));
-        icn.setIcon("BeanStateUnknown", jmri.jmrit.catalog.NamedIcon(truck_icon, "unknown"));
+        icn.setIcon("BeanStateInconsistent", jmri.jmrit.catalog.NamedIcon("resources/icons/throttles/RoundRedCircle20.png", "incons"));
+        icn.setIcon("BeanStateUnknown", jmri.jmrit.catalog.NamedIcon(null_icon, "unknown"));
 
         #icn.setText(blockName[:9])
         icn.setText(No)

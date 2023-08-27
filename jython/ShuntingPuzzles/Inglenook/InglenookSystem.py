@@ -4,8 +4,8 @@ from javax.swing import JButton, JFrame,JPanel,BoxLayout,Box
 from javax.swing import JLabel, JMenu, JMenuItem, JMenuBar
 from javax.swing import JFileChooser,JTextField, BorderFactory
 from javax.swing import SwingWorker, SwingUtilities
-from javax.swing import WindowConstants, JDialog, JTextArea
-from java.awt import Color, Font
+from javax.swing import WindowConstants, JDialog, JTextArea, JComboBox
+from java.awt import Color, Font, Frame
 import jmri
 
 import sys
@@ -156,6 +156,39 @@ def get_siding_block(siding):
                 print "s",s,"x", str(comment.split('#')[1])
     return None
 
+# @print_name()
+def get_siding_turnout(siding):
+    print "q"
+    s = siding.split("#")[1]
+    print "siding", siding
+    for turnout in turnouts.getNamedBeanSet():
+        comment = turnout.getComment()
+        if comment != None:
+            #print "comment" , comment
+            if "#" in comment:
+                #print "comment" , comment
+                #print "s", s, "comment.split('#')[0]", str(comment.split('#')[1]), "sensor", sensor, sensor.getUserName()
+                if s == str(comment.split('#')[1]):
+                    return turnout.getUserName()
+                print "s",s,"x", str(comment.split('#')[1])
+    return None
+
+def get_turnout_direction(turnoutName):
+    print "x"
+    turnout = turnouts.getTurnout(turnoutName)
+    print "x1"
+    comment = turnout.getComment()
+    print "x2", comment
+    if "$" in comment:
+        s = comment.split("$")[1]
+        print "x3"
+        s = s.replace("$","")
+        print "x4"
+        return s
+    else:
+        return None
+
+
 def delete_block_comment(siding_name):
     # delete the comment for block 'siding_name'
     for block in blocks.getNamedBeanSet():
@@ -181,6 +214,59 @@ def update_block_comment(siding_name, siding_block):
     else:
         siding_block_comment = siding_block_comment + " " + siding_name
     siding_block.setComment(siding_block_comment)
+
+def delete_turnout_comment(siding_name):
+    # delete the comment for turnout 'siding_name'
+    for turnout in turnouts.getNamedBeanSet():
+        comment = turnout.getComment()
+        if comment != None:
+            if siding_name in comment:
+                comment_without_siding_name = ""
+                str_list = comment.split(siding_name)
+                for element in str_list:
+                    if element != siding_name and "#" not in element:
+                        comment_without_siding_name += element
+                turnout.setComment(comment_without_siding_name)
+
+def delete_turnout_direction_comment(turnout):
+    # delete the comment for turnout 'siding_name'
+    comment = turnout.getComment()
+    if comment != None:
+        if "$" in comment:
+            comment_without_siding_name = ""
+            str_list = comment.split("$")
+            print "str_list",str_list
+            for element in str_list:
+                element = element.replace("  ","")
+                if element != "Thrown" and element != "Closed":
+                    comment_without_siding_name += element
+            turnout.setComment(comment_without_siding_name)
+# @print_name()
+def update_turnout_comment(siding_name, siding_turnout):
+
+    delete_turnout_comment(siding_name)
+
+    # insert the comment siding_name
+    print "spur_turnout = ", siding_turnout.getUserName()
+    siding_turnout_comment = siding_turnout.getComment()
+    if siding_turnout_comment == None or siding_turnout_comment == "":
+        siding_turnout_comment = siding_name
+    else:
+        siding_turnout_comment = siding_turnout_comment + " " + siding_name
+    siding_turnout.setComment(siding_turnout_comment)
+
+def update_turnout_direction_comment(turnout_direction, siding_turnout):
+
+    delete_turnout_direction_comment(siding_turnout)
+
+    # insert th comment siding_name
+    print "turnout = ", siding_turnout.getUserName()
+    siding_turnout_comment = siding_turnout.getComment()
+    if siding_turnout_comment == None or siding_turnout_comment == "":
+        siding_turnout_comment = "$" + turnout_direction + "$"
+    else:
+        siding_turnout_comment = siding_turnout_comment + " $" + turnout_direction + "$"
+    siding_turnout.setComment(siding_turnout_comment)
 
 # @print_name()
 def get_siding_sensor(siding):
@@ -219,7 +305,7 @@ def update_comment(siding_name, siding_sensor):
 
 def OK_action(event):
 
-    global sensorComboBox, blockComboBox
+    global sensorComboBox, blockComboBox, turnoutComboBox, turnoutComboBox2
     [spur_cb, sensor1_cb, sensor2_cb, sensor3_cb]= sensorComboBox
 
     spur_sensor_name = spur_cb.getSelectedItem()
@@ -250,6 +336,8 @@ def OK_action(event):
         update_comment("#IS_siding3_sensor#", siding3_sensor)
     else:
         delete_comment("#IS_siding3_sensor#")
+        
+    #**********************************************************************
 
     [spur_block_cb, mid_block_cb, block1_cb, block2_cb, block3_cb]= blockComboBox
 
@@ -288,11 +376,65 @@ def OK_action(event):
     else:
         delete_block_comment("#IS_block_siding3#")
 
+    #**********************************************************************
+    [T12_turnout_cb, T3_turnout_cb, main_turnout_cb]= turnoutComboBox
+
+    T12_turnout_name = T12_turnout_cb.getSelectedItem()
+    if T12_turnout_name != None:
+        T12_turnout = turnouts.getTurnout(str(T12_turnout_name))
+        update_turnout_comment("#IS_turnout_12#", T12_turnout)
+    else:
+        delete_turnout_comment("#IS_turnout_12#")
+
+    T3_turnout_name = T3_turnout_cb.getSelectedItem()
+    if T3_turnout_name != None:
+        T3_turnout = turnouts.getTurnout(str(T3_turnout_name))
+        update_turnout_comment("#IS_turnout_3#", T3_turnout)
+    else:
+        delete_turnout_comment("#IS_turnout_3#")
+
+    main_turnout_name = main_turnout_cb.getSelectedItem()
+    if main_turnout_name != None:
+        main_turnout = turnouts.getTurnout(str(main_turnout_name))
+        update_turnout_comment("#IS_turnout_main#", main_turnout)
+    else:
+        delete_turnout_comment("#IS_turnout_Tmain#")
+
+    #**********************************************************************
+
+    [T12_turnout_direction_cb, T3_turnout_direction_cb, main_turnout_direction_cb]= turnoutComboBox2
+
+    T12_turnout_direction = T12_turnout_direction_cb.getSelectedItem()
+    if T12_turnout_direction != None:
+        # T12_turnout_direction1 = str(T12_turnout_direction)
+        print "T12_turnout_direction",T12_turnout_direction
+        update_turnout_direction_comment(T12_turnout_direction, T12_turnout)
+    else:
+        delete_turnout_direction_comment(T12_turnout)
+
+    T3_turnout_direction = T3_turnout_direction_cb.getSelectedItem()
+    if T3_turnout_direction != None:
+        print "T3_turnout_direction", T3_turnout_direction
+        # T3_turnout_direction = turnouts.getTurnout(str(T3_turnout_name))
+        update_turnout_direction_comment(T3_turnout_direction, T3_turnout)
+    else:
+        delete_turnout_comment(T3_turnout)
+
+    main_turnout_direction = main_turnout_direction_cb.getSelectedItem()
+    if main_turnout_direction != None:
+        print "Tmain_turnout_direction", main_turnout_direction
+        # Tmain_turnout_direction = turnouts.getTurnout(str(Tmain_turnout_name))
+        update_turnout_direction_comment(main_turnout_direction, main_turnout)
+    else:
+        delete_turnout_comment(Tmain_turnout)
+
+    #**********************************************************************
+
     comp = event.getSource()
     win = SwingUtilities.getWindowAncestor(comp)
     win.dispose()
 def Cancel_action(event):
-    global sensorComboBox, blockComboBox
+    global sensorComboBox, blockComboBox, turnoutComboBox, turnoutComboBox2
     sensor = sensors.getSensor("CB11")
     sensorComboBox[0].setSelectedItem(sensor)
     item = sensorComboBox[0].getSelectedItem()
@@ -300,69 +442,48 @@ def Cancel_action(event):
     comp = event.getSource()
     win = SwingUtilities.getWindowAncestor(comp)
     win.dispose()
+
 def set_sensors_in_sidings(msg):
-    global sensorComboBox, blockComboBox
+    global sensorComboBox, blockComboBox, turnoutComboBox, turnoutComboBox2
     print "a"
     dialog = JDialog(None, 'Set sensors in sidings', False)
-
-    #panel = JPanel()
     panel = jmri.jmrit.beantable.beanedit.BeanItemPanel()
     panel.setLayout(BoxLayout(panel, BoxLayout.Y_AXIS))
-    print "e"
+    msg = "Set the sensors for the sidings"
     l = JLabel("   "+msg)
-    # l.add(Box.createHorizontalGlue())
-    # l.setAlignmentX(l.RIGHT_ALIGNMENT)
     l.setFont(l.getFont().deriveFont(Font.BOLD, 13))
     panel.add(leftJustify(l))
-    #panel.add(JTextArea(msg))
-    print "d"
-    #BeanItemPanel panel = new BeanItemPanel();
-    panel.setName("fred")
     bean = None
-    print "B"
     n = jmri.NamedBean.DisplayOptions.DISPLAYNAME
-    print "B"
-    #p = bean.getSensor()
-    print "B"
     sensorComboBox=[]
     rowTitle_22=[]
     for i in range(4):
         if i == 0:
-            msg = "spur    "
+            msg = "spur      "
         else:
-            msg = "siding " + str(i)
-        #panel.add(JTextArea(msg))
-        sensorComboBox.append(jmri.swing.NamedBeanComboBox(jmri.InstanceManager.getNullableDefault(jmri.SensorManager)))
+            msg = "siding   " + str(i)
+        sensorComboBox.append(jmri.swing.NamedBeanComboBox(sensors))
         sensorComboBox[i].setAllowNull(True)
+        sensorComboBox[i].setPreferredSize(Dimension(300, 20));
         siding = "#IS_"+msg.replace(" ","")+"_sensor#"
         sensorName = get_siding_sensor(siding)
+        print "sensorName", i, sensorName
         if sensorName != None:
             sensor = sensors.getSensor(sensorName)
             sensorComboBox[i].setSelectedItem(sensor)
             item = sensorComboBox[i].getSelectedItem()
         jmri.util.swing.JComboBoxUtil.setupComboBoxMaxRows(sensorComboBox[i])
-        #item = jmri.jmrit.beantable.beanedit.BeanEditItem(sensorComboBox, z, z1)
-        #panel.addItem(item)
         rowTitle_22.append(JPanel())
         rowTitle_22[i].add(Box.createVerticalGlue())
-        rowTitle_22[i].add(Box.createRigidArea(Dimension(20, 0)))
+        if i == 3:
+            msg = "long sid " + str(i)
         rowTitle_22[i].add(JTextArea(msg))
         rowTitle_22[i].add(Box.createRigidArea(Dimension(20, 0)))
+        rowTitle_22[i].add(Box.createHorizontalGlue())
         rowTitle_22[i].add(sensorComboBox[i])
         panel.add(leftJustify(rowTitle_22[i]))
-        if sensorName != None:
-            print "setting cb" , sensorName
-            sensorComboBox[i].setSelectedItem(str(sensorName))
-            item = sensorComboBox[i].getSelectedItem()
-            print "set cb box item ", item
-        #panel.add(sensorComboBox[i])
-        # panel.add(JTextArea(msg))
-        # panel.add(sensorComboBox2)
-    print "y"
 
     l1 = JLabel("   " + "Set the blocks for the siding and mid section")
-    # l1.add(Box.createHorizontalGlue())
-    # l1.setAlignmentX(l1.RIGHT_ALIGNMENT)
     l1.setFont(l1.getFont().deriveFont(Font.BOLD, 13))
     panel.add(leftJustify(l1))
 
@@ -370,47 +491,94 @@ def set_sensors_in_sidings(msg):
     rowTitle_23=[]
     for i in range(5):
         if i == 0:
-            msg = "spur    "
+            msg = "spur      "
         elif i == 1:
-            msg = "mid     "
+            msg = "mid       "
         else:
             msg = "siding   " + str(i-1)
-
-        #panel.add(JTextArea(msg))
         blockComboBox.append(jmri.swing.NamedBeanComboBox(jmri.InstanceManager.getNullableDefault(jmri.BlockManager)))
         blockComboBox[i].setAllowNull(True)
+        blockComboBox[i].setPreferredSize(Dimension(300, 20));
         siding = "#IS_block_"+msg.replace(" ","")+"#"
         blockName = get_siding_block(siding)
         if blockName != None:
             print "blockname not none", blockName
             block = blocks.getBlock(blockName)
             blockComboBox[i].setSelectedItem(block)
-            item = blockComboBox[i].getSelectedItem()
         jmri.util.swing.JComboBoxUtil.setupComboBoxMaxRows(blockComboBox[i])
-        #item = jmri.jmrit.beantable.beanedit.BeanEditItem(blockComboBox, z, z1)
-        #panel.addItem(item)
         rowTitle_23.append(JPanel())
         rowTitle_23[i].add(Box.createVerticalGlue())
-        rowTitle_23[i].add(Box.createRigidArea(Dimension(20, 0)))
+        if i == 4:
+            msg = "long sid " + str(i-1)
         rowTitle_23[i].add(JTextArea(msg))
         rowTitle_23[i].add(Box.createRigidArea(Dimension(20, 0)))
+        rowTitle_23[i].add(Box.createHorizontalGlue())
         rowTitle_23[i].add(blockComboBox[i])
         panel.add(leftJustify(rowTitle_23[i]))
-        if blockName != None:
-            print "setting cb" , blockName
-            blockComboBox[i].setSelectedItem(str(blockName))
-            item = blockComboBox[i].getSelectedItem()
-            print "set cb box item ", item
 
+    l2 = JLabel("   " + "Set the turnouts for the sidings and mainline")
+    l2.setFont(l.getFont().deriveFont(Font.BOLD, 13))
+    panel.add(leftJustify(l2))
+    bean = None
+    n = jmri.NamedBean.DisplayOptions.DISPLAYNAME
+    turnoutComboBox=[]
+    turnoutComboBox2 = []
+    rowTitle_24=[]
+    for i in range(3):
+        if i == 0:
+            msg = "turnout to 1 & 2"
+        elif i == 1:
+            msg = "turnout to 3    "
+        elif i == 2:
+            msg = "turnout to main "
+        turnoutComboBox.append(jmri.swing.NamedBeanComboBox(turnouts))
+        turnoutComboBox[i].setAllowNull(True)
+        turnoutComboBox2.append(JComboBox(("Thrown", "Closed")))
+        siding = "#IS_"+msg.replace(" ","").replace("to","_").replace("&","")+"#"
+        turnoutName = get_siding_turnout(siding)
+        print "turnoutName", i, turnoutName
+        turnoutDirection = None
+        if turnoutName != None:
+            turnout = turnouts.getTurnout(turnoutName)
+            turnoutComboBox[i].setSelectedItem(turnout)
+            # item = turnoutComboBox[i].getSelectedItem()
+            turnoutDirection = get_turnout_direction(turnoutName)
+        print "a2"
+        print "turnoutDirection", turnoutDirection
+        print "a1"
+        if turnoutDirection != None:
+            turnoutComboBox2[i].setSelectedItem(turnoutDirection)
+            # item = turnoutComboBox2[i].getSelectedItem()
+        print "b"
+        jmri.util.swing.JComboBoxUtil.setupComboBoxMaxRows(turnoutComboBox[i])
+        rowTitle_24.append(JPanel())
+        rowTitle_24[i].add(Box.createVerticalGlue())
+        rowTitle_24[i].add(JTextArea(msg))
+        rowTitle_24[i].add(Box.createRigidArea(Dimension(20, 0)))
+        rowTitle_24[i].add(Box.createHorizontalGlue())
+        rowTitle_24[i].add(turnoutComboBox[i])
+        rowTitle_24[i].add(Box.createRigidArea(Dimension(20, 0)))
+        print "a"
+        if i == 0:
+            msg = "to 1:   "
+        elif i == 1:
+            msg = "to 3:   "
+        else:
+            msg = "to main:"
+        rowTitle_24[i].add(JTextArea(msg))
+        # rowTitle_24[i].add(Box.createHorizontalGlue())
+        rowTitle_24[i].add(turnoutComboBox2[i])
+        panel.add(leftJustify(rowTitle_24[i]))
+    print "c"
     rowStage1Button_1 = JButton("OK", actionPerformed = OK_action)
     rowStage1Button_2 = JButton("Cancel", actionPerformed = Cancel_action)
-    rowTitle_24 = JPanel()
-    rowTitle_24.add(Box.createVerticalGlue())
-    rowTitle_24.add(Box.createRigidArea(Dimension(20, 0)))
-    rowTitle_24.add(rowStage1Button_1)
-    rowTitle_24.add(Box.createRigidArea(Dimension(20, 0)))
-    rowTitle_24.add(rowStage1Button_2)
-    panel.add(leftJustify(rowTitle_24))
+    rowTitle_25 = JPanel()
+    rowTitle_25.add(Box.createVerticalGlue())
+    rowTitle_25.add(Box.createRigidArea(Dimension(20, 0)))
+    rowTitle_25.add(rowStage1Button_1)
+    rowTitle_25.add(Box.createRigidArea(Dimension(20, 0)))
+    rowTitle_25.add(rowStage1Button_2)
+    panel.add(leftJustify(rowTitle_25))
 
 
     print "YYYYY"
@@ -498,6 +666,12 @@ def leftJustify( panel ):
     # and struts and glue in here.)
     return b
 
+def delete_open_inglenook_panels():
+    for frame in Frame.getFrames ():
+        if frame.getTitle() == 'Inglenook Sidings':
+            print ("panel found Inglenook Sidings")
+            frame.dispose()
+
 ################################################################################################################
 # main file
 ################################################################################################################
@@ -515,6 +689,8 @@ logLevel = 0
 #*****************
 CreateIcons = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/Inglenook/CreateIcons.py')
 execfile(CreateIcons)
+
+delete_open_inglenook_panels()
 
 #*****************
 frame = jmri.util.JmriJFrame('Inglenook Sidings');
@@ -624,12 +800,13 @@ rowStage1Separator.add(rowStage1Separator_2)
 
 rowStage1Button = JPanel()
 rowStage1Button.setLayout(BoxLayout(rowStage1Button, BoxLayout.X_AXIS))
-rowrowStage1Button_2 = JLabel("Sets Up truck indicators to show sorting progress")
+rowrowStage1Button_2 = JLabel("Set up sensors for stopping in sidings")
 rowrowStage1Button_2.setFont(rowTitle_2_1.getFont().deriveFont(Font.BOLD, 13));
 
 rowrowStage1Button_2.add(Box.createHorizontalGlue());
 rowrowStage1Button_2.setAlignmentX(rowrowStage1Button_2.LEFT_ALIGNMENT)
-rowStage1Button_1 = JButton("Stage1", actionPerformed = CreateIcons_action)
+rowStage1Button_1 = JButton("Stage1", actionPerformed = ChangeOptions_action)
+
 stage1Button = rowStage1Button_1
 
 
@@ -647,12 +824,12 @@ KeyEvent = java.awt.event.KeyEvent
 
 rowStage2 = JPanel()
 rowStage2.setLayout(BoxLayout(rowStage2, BoxLayout.X_AXIS))
-rowStage2_1 = JLabel("Set up sensors for stopping in sidings")
+rowStage2_1 = JLabel("Set Up truck indicators to show sorting progress")
 rowStage2_1.setFont(rowTitle_2_1.getFont().deriveFont(Font.BOLD, 13));
 rowStage2_1.add(Box.createHorizontalGlue());
 rowStage2_1.setAlignmentX(rowStage2_1.LEFT_ALIGNMENT)
 
-rowStage2_2 = JButton("Stage2", actionPerformed = ChangeOptions_action)
+rowStage2_2 = JButton("Stage2", actionPerformed = CreateIcons_action)
 stage2Button = rowStage2_2
 
 rowStage2.add(Box.createVerticalGlue())
@@ -676,6 +853,8 @@ panel.add(leftJustify(rowStage1Separator))
 #stage2
 panel.add(leftJustify(rowStage2))
 panel.add(leftJustify(rowStage2Separator))
+
+
 
 frame.pack()
 frame.setVisible(True)
