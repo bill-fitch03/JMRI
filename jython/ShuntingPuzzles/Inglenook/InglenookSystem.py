@@ -174,6 +174,7 @@ def get_siding_turnout(siding):
     return None
 
 def get_turnout_direction(turnoutName):
+
     print "x"
     turnout = turnouts.getTurnout(turnoutName)
     print "x1"
@@ -275,7 +276,8 @@ def get_siding_sensor(siding):
         comment = sensor.getComment()
         if comment != None:
             if "#" in comment:
-                if s == str(comment.split('#')[1]):
+                # if s == str(comment.split('#')[1]):
+                if s in comment:    # allow two sidings to have the same sensor (1 & 2 for example)
                     return sensor.getUserName()
     return None
 
@@ -462,6 +464,7 @@ def set_sensors_in_sidings(msg):
             msg = "spur      "
         else:
             msg = "siding   " + str(i)
+        print "hi"
         sensorComboBox.append(jmri.swing.NamedBeanComboBox(sensors))
         sensorComboBox[i].setAllowNull(True)
         sensorComboBox[i].setPreferredSize(Dimension(300, 20));

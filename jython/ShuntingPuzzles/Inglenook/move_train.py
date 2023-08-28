@@ -174,7 +174,7 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
             self.sensor3 = self.get_decoupling_sensor("#IS_siding2_sensor#")
             self.myprint1 ("trying to set up sensors2", self.sensor3)
 
-            self.sensor4 = self.get_decoupling_sensor("#IS_siding3_sensor#")"
+            self.sensor4 = self.get_decoupling_sensor("#IS_siding3_sensor#")
             self.myprint1 ("trying to set up sensorsspur", self.sensor4)
             self.myprint1 ("sensore set up")
         except:

@@ -175,13 +175,13 @@ class OptionDialog( jmri.jmrit.automat.AbstractAutomaton ) :
     def displayMessage2(self, msg, title = ""):
         self.displayMessage(msg, "", True)
     def displayMessage1(self, msg, title = ""):
-        self.displayMessage(msg, "", False)
+        self.displayMessage(msg, "", True)
 
-    def displayMessage(self, msg, title = "", display = False):
+    def displayMessage(self, msg, title = "", display = True):
         global display_message_flag
 
         if 'display_message_flag' not in globals():
-            display_message_flag = False
+            display_message_flag = True
 
         # if display_message_flag:
         if display:
@@ -1019,35 +1019,20 @@ class RunInglenookMaster():
 
         # Inglenook = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/inglenook/inglenook.py')
         # exec(open (Inglenook).read())
-
-        run_inglenook = StartInglenookMaster()                  #need this starts the system
+        print "starting InglenookMaster"
+        run_inglenook = InglenookMaster()                  #need this starts the system
         if run_inglenook.setup():
+            print "run_inglenook_setup() returns True"
             run_inglenook.setName('Start Inglenook')
             run_inglenook.start()
             print "started StartInglenookMaster"
+        else:
+            print "run_inglenook_setup() returns False"
 
         stop_master = StopMaster()                  #need this stops the system
         if stop_master.setup():
             stop_master.setName('Stop Master')
             stop_master.start()
-
-        # t = TestCall()
-        # print "init finished (not there)"
-        # if t.setup():
-        #     t.setName('Start Inglenook')
-        #     print "starting test"
-        #     t.start()
-        #     print "ending test"
-
-        # used to responds to "setDispatchSensor","setRouteSensor","setStoppingDistanceSensor"
-        # used to respond ro run route button
-        # reset_button_master = ResetButtonMaster()
-        # instanceList.append(reset_button_master)
-        # if reset_button_master.setup():
-        #     pass
-        #     reset_button_master.setName('Reset Button Master')
-        #     reset_button_master.start()
-
 
         off_action_master = OffActionMaster()
         instanceList.append(off_action_master)

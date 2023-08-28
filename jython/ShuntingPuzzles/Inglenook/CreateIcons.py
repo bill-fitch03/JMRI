@@ -152,7 +152,9 @@ class processPanels():
         if some_checks_OK:
             msg = "Performed some preliminary checks to ensure the trains run correctly\n\nAll Checks OK"
             reply = Query().customQuestionMessage2(msg, "Checks", "Continue", "Look in more detail")
-            print "reply=", reply
+            if Query().CLOSED_OPTION == True:
+                return False
+            # print "reply=", reply
             if reply == JOptionPane.NO_OPTION:
                 if sensors_OK:
                     Message = "All blocks have sensors"
@@ -752,17 +754,22 @@ class processPanels():
         print "addmarkericon"
         icn = jmri.jmrit.display.SensorIcon(panel)
         truck_icon = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/icons/truck6.gif')
+        engine_icon = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/icons/engine1.gif')
         null_icon = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/icons/null.gif')
-
-        # icn.setIcon("SensorStateActive", jmri.jmrit.catalog.NamedIcon("resources/icons/markers/loco-green.gif", "active"));
+        if No == "1":
+            truck_icon = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/icons/truckred.gif')
+        # icn.setIcon("SensorStateActive", jmri.jmrit.catalog.NamedIcon("resources/icons/markers/loco-green.gif", "active"))
         icn.setIcon("SensorStateInactive", jmri.jmrit.catalog.NamedIcon("resources/icons/throttles/RoundRedCircle20.png", "inactive"))
         # icn.setIcon("SensorStateInactive", jmri.jmrit.catalog.NamedIcon(null_icon, "inactive"))
         # icn.setIcon("BeanStateInconsistent", jmri.jmrit.catalog.NamedIcon("resources/icons/markers/loco-yellow.gif", "incons"));
-        # icn.setIcon("BeanStateUnknown", jmri.jmrit.catalog.NamedIcon("resources/icons/markers/loco-gray.gif", "unknown"));
-        icn.setIcon("SensorStateActive", jmri.jmrit.catalog.NamedIcon(truck_icon, "active"));
-        #icn.setIcon("SensorStateInactive", jmri.jmrit.catalog.NamedIcon("", "inactive"));
-        icn.setIcon("BeanStateInconsistent", jmri.jmrit.catalog.NamedIcon("resources/icons/throttles/RoundRedCircle20.png", "incons"));
-        icn.setIcon("BeanStateUnknown", jmri.jmrit.catalog.NamedIcon(null_icon, "unknown"));
+        # icn.setIcon("BeanStateUnknown", jmri.jmrit.catalog.NamedIcon("resources/icons/markers/loco-gray.gif", "unknown"))
+        icn.setIcon("SensorStateActive", jmri.jmrit.catalog.NamedIcon(truck_icon, "active"))
+        icn.setIcon("SensorStateInactive", jmri.jmrit.catalog.NamedIcon(null_icon, "inactive"))
+        icn.setIcon("BeanStateInconsistent", jmri.jmrit.catalog.NamedIcon(engine_icon, "inconsistent"))
+        icn.setIcon("BeanStateUnknown", jmri.jmrit.catalog.NamedIcon(null_icon, "unknown"))
+        if No == "1":
+            truck_icon = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/icons/truckred.gif')
+
 
         #icn.setText(blockName[:9])
         icn.setText(No)
