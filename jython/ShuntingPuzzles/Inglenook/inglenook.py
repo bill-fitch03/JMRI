@@ -19,34 +19,35 @@ class Inglenook:
 
     spur_branch = 4
 
-    def __init__(self, pegs, number_of_trucks_in_siding_3):
+    def __init__(self, pegs, size_long_siding, size_short_sidings):
         self.pegs = pegs
-        self.number_of_trucks_in_siding_3 = number_of_trucks_in_siding_3
-        print "self.number_of_trucks_in_siding_3", self.number_of_trucks_in_siding_3
+        self.size_long_siding = size_long_siding
+        self.size_short_sidings = size_short_sidings
+        print "self.size_long_siding", self.size_long_siding
 
-    def solvePuzzle1(self):
-        print "solving puzzle1"
-        destSiding = 1
-        for requiredPosition in range(number_of_trucks_in_siding_3,1,-1):
-            msg = "self.moveTruckToDesiredPosition " + str(requiredPosition)
-            # print "Yielded message", msg
-            yield ["display_message", msg]
-
-            #move trucks to the required position in order 5 4 3 2 1
-            for p in self.moveTruckToDesiredPosition(requiredPosition, destSiding):
-                # print "yielded p", p
-                yield p
-            # return engine to spur
-        noTrucks = 0
-        fromBranch = 1
-        destBranch = self.spur_branch
-        print "yielded p", ["move_trucks", noTrucks, fromBranch, destBranch, self.pegs]
-        yield ["move_trucks", noTrucks, fromBranch, destBranch, self.pegs]
-        print "solved puzzle"
+    # def solvePuzzle1(self):
+    #     print "solving puzzle1"
+    #     destSiding = 1
+    #     for requiredPosition in range(size_long_siding,1,-1):
+    #         msg = "self.moveTruckToDesiredPosition " + str(requiredPosition)
+    #         # print "Yielded message", msg
+    #         yield ["display_message", msg]
+    #
+    #         #move trucks to the required position in order 5 4 3 2 1
+    #         for p in self.moveTruckToDesiredPosition(requiredPosition, destSiding):
+    #             # print "yielded p", p
+    #             yield p
+    #         # return engine to spur
+    #     noTrucks = 0
+    #     fromBranch = 1
+    #     destBranch = self.spur_branch
+    #     print "yielded p", ["move_trucks", noTrucks, fromBranch, destBranch, self.pegs]
+    #     yield ["move_trucks", noTrucks, fromBranch, destBranch, self.pegs]
+    #     print "solved puzzle"
 
     def solvePuzzle(self):
         destSiding = 1
-        for requiredPosition in range(self.number_of_trucks_in_siding_3,0,-1):
+        for requiredPosition in range(self.size_long_siding,0,-1):
             msg = "self.moveTruckToDesiredPosition " + str(requiredPosition)
             yield ["display_message", msg]
 
@@ -69,11 +70,11 @@ class Inglenook:
         if self.truckInSiding(truckNo, destSiding):
             print("truckInSiding", truckNo, destSiding)
             # a) If Truck is in top siding but not nearest buffers, move to other siding
-            # if truck self.number_of_trucks_in_siding_3 is in position 2, move to position 3 by putting another truck at buffers
+            # if truck self.size_long_siding is in position 2, move to position 3 by putting another truck at buffers
             # If truck is in position 3 or more, move trucks to other siding
             # putting in position 3 if possible
 
-            desiredPosition = self.number_of_trucks_in_siding_3 - truckNo
+            desiredPosition = self.size_long_siding - truckNo
 
             if not self.truckAtPositionFromEnd(truckNo, destSiding, desiredPosition + 1):
                 msg = "truck" + str(truckNo) + " not in " + str(desiredPosition) + " actually at " + str(list(self.pegs[destSiding - 1]).index(truckNo))
@@ -90,13 +91,15 @@ class Inglenook:
                 # a4=self.truckAtPositionFromEnd(truckNo, destSiding, 4)
                 # a5=self.truckAtPositionFromEnd(truckNo, destSiding, 5)
 
+                # check if desired truck is in position 1 (if 0 is the desired position), if so put it to position 2
+
                 if self.truckAtPositionFromEnd(truckNo, destSiding, refPos):
                     msg = "truck" + str(truckNo) + " in " + str(refPos) + "inserting truck so we can deal with it at next stage"
                     yield ["display_message", msg]
                     fromBranch = self.getOccupiedBranch(destSiding)
                     self.insertTruck(fromBranch, destSiding, desiredPosition + 1)
 
-                # check the position of the truck
+                # check the position of the truck is at position 2, if put rp = 2
                 freeBranch = 0
                 refPos = desiredPosition + 1
                 rp = 0
@@ -107,13 +110,17 @@ class Inglenook:
                     msg = "truck" + str(truckNo) + " in " + str(refPos) + " storing value rp " + str(rp)
                     yield ["display_message", msg]
 
+                # check the position of the truck is at position 3, if put rp = 3
                 refPos = desiredPosition + 1
                 if self.truckAtPositionFromEnd(truckNo, destSiding, refPos + 1):
                     # Myfunctions.getPositions())) {
                     rp = desiredPosition + 2
                     msg = "truck" +str(truckNo) + " in " + str(refPos) + "storing value rp " + str(rp)
                     yield ["display_message", msg]
+
+
                 if rp > 0:
+                    # if truck is in positions 2 or 3 move trucks to the left of that position to leave only 1 truck to the left of it
                     noTrucks = self.noOfTrucksToLeftFromEnd(destSiding, rp)
                     msg = "a"
                     yield ["display_message", msg]
@@ -122,20 +129,23 @@ class Inglenook:
                         noTrucks1 = self.noOfTrucksToLeftFromEnd(destSiding, rp + 1)
                         # move the surplus trucks
                         freeBranch1 = 0
-                        for p in self.getFreeBranch(noTrucks1):
+                        for p in self.getFreeBranch(noTrucks1,size_short_sidings):
                             freeBranch1 = next(p)
                             yield p
                         # Myfunctions.getPositions());
-                        for p in self.moveTrucksOneByOneCreatingYieldStatements(noTrucks1, destSiding, freeBranch1): yield p
+                        #for p in self.moveTrucksOneByOneCreatingYieldStatements(noTrucks1, destSiding, freeBranch1): yield p
+                        for p in self.moveTrucksCreatingYieldStatements(noTrucks1, destSiding, freeBranch1): yield p
 
                     msg = "a1"
                     yield ["display_message", msg]
+
+                    # if there is 1 truck to the left of the truck we are positioning, move the two trucks to a free branch
 
                     noTrucks = self.noOfTrucksToLeftFromEnd(destSiding, rp)
                     if (noTrucks == 1):
                         noTrucksToMove = 2
                         freeBranch = 0
-                        for p in self.getFreeBranch(noTrucksToMove):
+                        for p in self.getFreeBranch(noTrucksToMove,size_short_sidings):
                             i = 0
                             if i == 0:
                                 freeBranch = p
@@ -147,23 +157,26 @@ class Inglenook:
                     msg = "a2"
                     yield ["display_message", msg]
 
+                    # if there are no trucks to the left of the one we are positioning, move that truck to a free branch
+
                     noTrucks = self.noOfTrucksToLeftFromEnd(destSiding, rp)
                     if (noTrucks == 0):
                         # can just move truck
                         noTrucksToMove = 1
                         freeBranch = 0
-                        for p in self.getFreeBranch(noTrucksToMove):
+                        for p in self.getFreeBranch(noTrucksToMove, size_short_sidings):
                             i = 0
                             if i == 0:
                                 freeBranch = p
                             else:
                                 yield p
                         # Myfunctions.getPositions());
-                        for p in self.moveTrucksOneByOneCreatingYieldStatements(noTrucksToMove, destSiding, freeBranch): yield p
+                        for p in self.moveTrucksCreatingYieldStatements(noTrucksToMove, destSiding, freeBranch): yield p
 
                     msg = "a3"
                     yield ["display_message", msg]
 
+                # check the position of the truck is at position 3 (0,1,2,3), if put mypos = that position for display purposes
                 refPos = desiredPosition + 3
                 mypos = 99
                 if self.truckAtPositionFromEnd(truckNo, destSiding, refPos):
@@ -175,14 +188,21 @@ class Inglenook:
                 msg = "truck is in position " + str(mypos)
                 yield ["display_message", msg]
 
+                # if the truck is at position 3 4 or 5  (only check up to the number needed) put the truck on another branch
+                # then use the algorithm for 'truck on the other branch'
+                
+                # A better routine would be to move all trucks except 2 to other branches, ensuring that the desired truck is on top
+                # i.e move all trucks to left of the desired truck to other branch. then all except 2 to other branch. Might need a 'split
+                # routine to ensure that all trucks get to other branch
+
                 if (self.truckAtPositionFromEnd(truckNo, destSiding, refPos) or
                         self.truckAtPositionFromEnd(truckNo, destSiding, refPos + 1) or
                         self.truckAtPositionFromEnd(truckNo, destSiding, refPos + 2)):
 
                     # now we have to move the trucks to another siding
-                    noTrucks = self.noOfTrucksToLeftFromEnd(destSiding, 2)
+                    noTrucks = self.noOfTrucksToLeftFromEnd(destSiding, 2)   #move all trucks in position 3 4 or 5
                     freeBranch = 0
-                    for p in self.getFreeBranch(noTrucks):
+                    for p in self.getFreeBranch(noTrucks, size_short_sidings):
                         i = 0
                         if i==0 :
                             freeBranch = p
@@ -213,7 +233,7 @@ class Inglenook:
                     #     for p in self.moveTrucksOneByOneCreatingYieldStatements(1, destSiding, freeBranch): yield ["display_message", msg];yield p
                     #     sg = "b24"
                     #     #insert the truck in the first position
-                    #     for p in self.insertTruck(freeBranch, destSiding, self.number_of_trucks_in_siding_3 - truckNo): yield ["display_message", msg];yield p
+                    #     for p in self.insertTruck(freeBranch, destSiding, self.size_long_siding - truckNo): yield ["display_message", msg];yield p
                     # else:
                     #     msg = "b3"
                     #     yield ["display_message", msg]
@@ -227,22 +247,22 @@ class Inglenook:
                     #             yield p
                     #     for p in self.moveTrucksOneByOneCreatingYieldStatements(1, destSiding, freeBranch): yield p
                     #     # now move the truck from the first position on the free branch to another branch
-                    #     for p in self.insertTruck(freeBranch, destSiding, self.number_of_trucks_in_siding_3 - truckNo): yield p
+                    #     for p in self.insertTruck(freeBranch, destSiding, self.size_long_siding - truckNo): yield p
 
-                    msg = "b3"
-                    yield ["display_message", msg]
-                    # move truck to a free branch
-                    freeBranch = 0
-                    for p in self.getFreeBranch(noTrucks):
-                        i = 0
-                        if i == 0:
-                            freeBranch = p
-                        else:
-                            yield p
-                    for p in self.moveTrucksOneByOneCreatingYieldStatements(1, destSiding, freeBranch): yield p
-                    # now move the truck from the first position on the free branch to another branch
-                    n = self.number_of_trucks_in_siding_3 - truckNo
-                    for p in self.insertTruck(freeBranch, destSiding, n): yield p
+                    # msg = "b3"
+                    # yield ["display_message", msg]
+                    # # move truck to a free branch
+                    # freeBranch = 0
+                    # for p in self.getFreeBranch(noTrucks):
+                    #     i = 0
+                    #     if i == 0:
+                    #         freeBranch = p
+                    #     else:
+                    #         yield p
+                    # for p in self.moveTrucksOneByOneCreatingYieldStatements(1, destSiding, freeBranch): yield p
+                    # # now move the truck from the first position on the free branch to another branch
+                    # n = self.size_long_siding - truckNo
+                    # for p in self.insertTruck(freeBranch, destSiding, n): yield p
             print("end of truckInSiding" + str(truckNo) + " " + str(destSiding))
 
 
@@ -278,11 +298,11 @@ class Inglenook:
                             for p in self.moveTrucksOneByOneCreatingYieldStatements(1, truckSiding, destSiding): yield p
                         for p in self.moveTrucksOneByOneCreatingYieldStatements(noTrucks, truckSiding, destSiding): yield p
                         for p in self.moveTrucksOneByOneCreatingYieldStatements(1, truckSiding, 4): yield p
-                        self.noTrucks1 = min(self.noOfTrucksToLeftFromEnd(destSiding, self.number_of_trucks_in_siding_3 - (truckNo + 1)), 2)
+                        self.noTrucks1 = min(self.noOfTrucksToLeftFromEnd(destSiding, self.size_long_siding - (truckNo + 1)), 2)
                         for p in self.moveTrucksOneByOneCreatingYieldStatements(self.noTrucks1, 1, 4): yield p
                         for p in self.moveTrucksOneByOneCreatingYieldStatements(4, self.noOfTrucksInBranch(4), truckSiding): yield p
 
-                refPos = self.number_of_trucks_in_siding_3 - truckNo;
+                refPos = self.size_long_siding - truckNo;
                 for p in self.insertTruck(truckSiding, destSiding, refPos): yield p
 
             elif self.truckAtPositionFromEnd(truckNo, truckSiding, 1):
@@ -296,14 +316,14 @@ class Inglenook:
                     else:
                         for p in self.insertTruck(other_branch, truckSiding, 1, ): yield p
 
-                for p in self.insertTruck(truckSiding, destSiding, self.number_of_trucks_in_siding_3 - truckNo): yield p
+                for p in self.insertTruck(truckSiding, destSiding, self.size_long_siding - truckNo): yield p
             else:
                 # check the position of the truck
 
                 freeBranch = 0
                 refPos = 2
                 if (self.truckAtPositionFromEnd(truckNo, truckSiding, refPos)):
-                    refPos1 = self.number_of_trucks_in_siding_3 - truckNo  # because of the numbering
+                    refPos1 = self.size_long_siding - truckNo  # because of the numbering
                     for p in self.insertTruck(truckSiding, destSiding, refPos1): yield p
             msg =  "end of truck " + str(truckNo) + " not in siding (destSiding) " + str(destSiding)
             yield ["display_message", msg]
@@ -368,7 +388,7 @@ class Inglenook:
 
         if (no_trucks_to_move2 != 0):
             freeBranch = 0
-            for p in self.getFreeBranch(no_trucks_to_move2):
+            for p in self.getFreeBranch(no_trucks_to_move2, size_short_sidings):
                 i = 0
                 if i == 0:
                     freeBranch = p
@@ -449,29 +469,29 @@ class Inglenook:
     def noOfTrucksInBranch(self,branchNo):
         return len(self.pegs[branchNo - 1])
 
-    def getFreeBranch(self, NoOfTrucksRequired):
+    def getFreeBranch(self, NoOfTrucksRequired, size_short_sidings):
         #finds a free branch, if not creates one
         #print("getFreeBranch" )
-        if (3 - self.noOfTrucksInBranch(2)) >= NoOfTrucksRequired :
+        if (size_short_sidings - self.noOfTrucksInBranch(2)) >= NoOfTrucksRequired :
             yield 2
             #print("getFreeBranch",2)
             return
-        elif ((3 - self.noOfTrucksInBranch(3)) >= NoOfTrucksRequired) :
+        elif ((size_short_sidings - self.noOfTrucksInBranch(3)) >= NoOfTrucksRequired) :
             yield 3
             #print("getFreeBranch",3)
             return
 
         else:
             if self.noOfTrucksInBranch(2) < self.noOfTrucksInBranch(3) :
-                noTrucksToMove = 3 - self.noOfTrucksInBranch(2) - NoOfTrucksRequired
-                refPos = 3 - noTrucksToMove
+                noTrucksToMove = SizeBranches1and2 - self.noOfTrucksInBranch(2) - NoOfTrucksRequired
+                refPos = size_short_sidings - noTrucksToMove
                 for p in self.moveTrucksOneByOneCreatingYieldStatements(noTrucksToMove, 2, 3): yield p
                 yield 2
                 #print("getFreeBranch",2)
                 return
             else:
                 noTrucksToMove = NoOfTrucksRequired - self.noOfTrucksInBranch(3)
-                refPos = 3 - noTrucksToMove
+                refPos = size_short_sidings - noTrucksToMove
                 for p in self.moveTrucksOneByOneCreatingYieldStatements(noTrucksToMove, 3, 3): yield p
                 yield 3
                 #print("getFreeBranch",3)

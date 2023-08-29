@@ -55,14 +55,15 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
 
         sensor_that_went_active = [sensor for sensor in self.get_inglenook_run_or_simulate_buttons if sensor.getKnownState() == ACTIVE][0]
 
-        number_of_trucks_in_siding_3 = 4
+        size_long_siding = 4
+        size_short_sidings = 3
 
-        self.act_on_sensors(sensor_that_went_active, number_of_trucks_in_siding_3)
+        self.act_on_sensors(sensor_that_went_active, size_long_siding, size_short_sidings)
 
         sensor_that_went_active.setKnownState(INACTIVE)
 
 
-    def act_on_sensors(self, active_sensor, number_of_trucks_in_siding_3):
+    def act_on_sensors(self, active_sensor, size_long_siding, size_short_sidings):
         global display_message_flag
 
         print "handle InglenookMaster"
@@ -76,7 +77,7 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
         initial_positions_of_trucks = self.set_positions_of_trucks()
 
         # the required positions of the trucks are generated using yield statements
-        positions = self.determine_required_positions_of_trucks(initial_positions_of_trucks, number_of_trucks_in_siding_3)
+        positions = self.determine_required_positions_of_trucks(initial_positions_of_trucks, size_long_siding, size_short_sidings)
 
         # # the sequence of required positions are now used to move the train
         # and display visually where the trucks are
@@ -526,17 +527,17 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
         #                                deque([0,6, 7]), deque([6, 7]), deque([ 7])]
         #positions_of_trucks = [[2, 1, 5, 3, 4], [6, 7, 8], [], [], []]
 
-        positions_of_trucks = [deque([2, 1, 3, 4]), deque([5, 6, 7]), deque([]), deque([0]), deque(), deque(), deque()]
+        positions_of_trucks = [deque([2, 1, 3, 5]), deque([4, 6, 7]), deque([]), deque([0]), deque(), deque(), deque()]
         return positions_of_trucks
 
 
-    def determine_required_positions_of_trucks(self, positions_of_trucks, number_of_trucks_in_siding_3):
+    def determine_required_positions_of_trucks(self, positions_of_trucks, size_long_siding, size_short_sidings):
         print "determine_required_positions_of_trucks"
         # for i in range(0,2):
         #    assert len(pegs[i]) == noPegs[i], 'not enough disks on peg'
         yield positions_of_trucks
         # now run the shunting puzzle
-        ingle = Inglenook(positions_of_trucks, number_of_trucks_in_siding_3)  # class Inglenook
+        ingle = Inglenook(positions_of_trucks, size_long_siding, size_short_sidings)  # class Inglenook
         print "set up ingle"
         # don't need these
         # ingle.init_position_branch()
