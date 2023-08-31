@@ -263,7 +263,6 @@ def timeout(timeout):
 ##                print ("args[0]=",args[0])
                 print "a"
                 res = [Exception('function [%s] timeout [%s seconds] exceeded!' % (func.__name__, glb_timeout))]
-                print "fred"
                 try:
                     print "jim"
                     print "calling function", func.__name__

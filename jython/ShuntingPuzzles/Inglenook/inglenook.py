@@ -24,27 +24,6 @@ class Inglenook:
         self.size_long_siding = size_long_siding
         self.size_short_sidings = size_short_sidings
         print "self.size_long_siding", self.size_long_siding
-
-    # def solvePuzzle1(self):
-    #     print "solving puzzle1"
-    #     destSiding = 1
-    #     for requiredPosition in range(size_long_siding,1,-1):
-    #         msg = "self.moveTruckToDesiredPosition " + str(requiredPosition)
-    #         # print "Yielded message", msg
-    #         yield ["display_message", msg]
-    #
-    #         #move trucks to the required position in order 5 4 3 2 1
-    #         for p in self.moveTruckToDesiredPosition(requiredPosition, destSiding):
-    #             # print "yielded p", p
-    #             yield p
-    #         # return engine to spur
-    #     noTrucks = 0
-    #     fromBranch = 1
-    #     destBranch = self.spur_branch
-    #     print "yielded p", ["move_trucks", noTrucks, fromBranch, destBranch, self.pegs]
-    #     yield ["move_trucks", noTrucks, fromBranch, destBranch, self.pegs]
-    #     print "solved puzzle"
-
     def solvePuzzle(self):
         destSiding = 1
         for requiredPosition in range(self.size_long_siding,0,-1):
@@ -59,7 +38,6 @@ class Inglenook:
         fromBranch = 1
         destBranch = self.spur_branch
         yield ["move_trucks", noTrucks, fromBranch, destBranch, self.pegs]
-
 
     def moveTruckToDesiredPosition(self, truckNo, destSiding):
         print("moveTruckToDesiredPosition", truckNo, destSiding)
