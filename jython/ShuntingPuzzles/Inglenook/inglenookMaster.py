@@ -49,7 +49,7 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
         self.get_inglenook_run_or_simulate_buttons = \
             [sensors.getSensor(sensorName) for sensorName in \
                 ["justShowSortingInglenookSensor", "simulateInglenookSensor", \
-                 "simulateErrorsInglenookSensor", "runRealTrainInglenookSensor"]]
+                 "simulateErrorsInglenookSensor", "runRealTrainInglenookDistributionSensor"]]
 
         self.waitSensorActive(self.get_inglenook_run_or_simulate_buttons)
 
@@ -68,16 +68,18 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
 
         print "handle InglenookMaster"
 
-        # print "about to wait for sensor to test"
-        # test_sensor = sensors.getSensor("soundInglenookSensor")
-        # self.waitSensorActive(test_sensor)
-        # test_sensor.setKnownState(INACTIVE)
-        # print ("success waited for test sensor - this works")
+        self.no_trucks = self.get_no_trucks()
+        [no_trucks_short, no_trucks_long, no_trucks_total] = self.no_trucks
 
         initial_positions_of_trucks = self.set_positions_of_trucks()
 
+        if active_sensor == sensors.getSensor("runRealTrainInglenookDistributionSensor"):
+            distribute_trucks = True
+        else:
+            distribute_trucks = False
+
         # the required positions of the trucks are generated using yield statements
-        positions = self.determine_required_positions_of_trucks(initial_positions_of_trucks, size_long_siding, size_short_sidings)
+        positions = self.determine_required_positions_of_trucks(initial_positions_of_trucks, size_long_siding, size_short_sidings, distribute_trucks)
 
         # # the sequence of required positions are now used to move the train
         # and display visually where the trucks are
@@ -86,47 +88,17 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
         screen = pygame.display.set_mode((700, 250))
         pygame.display.set_caption('Shunting Puzzle')
         screen.fill((255, 255, 255))
-        # print "Calling Test()"
-
-
-        # let us do a test trying to invoke waitforsensor with the routines from train
-        # Test1 = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/Inglenook/move_train_alternative.py')
-        # exec(open (Test1).read())
-
-        # t = TestCall()
-        # print "init finished (not there)"
-        # if t.setup():
-        #     t.setName('Start Inglenook')
-        #     print "starting test"
-        #     t.start()
-        #     print "ending test - should have called handle and waited for sensor"
 
         train = Move_train2()
         print "init finished (not there)"
         pegs_updated_by_simulation = None
         if train.setup():
             train.setName('Start Inglenook')
-            print "starting Move_Train"
             train.start()
-            print "ending move_train   - should have called handle"
-
-            # self.waitMsec(5000)
-            print "Calling decide_what_to_do_first()"
-            train.decide_what_to_do_first()
-            print "Called decide_what_to_do_first()"
-            # display = Display_truck_positions()
-
+            train.decide_what_to_do_first(active_sensor)
             if active_sensor == sensors.getSensor("justShowSortingInglenookSensor"):
-
                 print "Called justShowSortingInglenookSensor"
                 count = 0
-                # for position in positions:
-                #     if position is not None:
-                #         print "position" , str(position)
-                #     else:
-                #         print "error"
-                # print "fred"
-                # for count, position in enumerate(positions):
                 for position in positions:
                     print "next position"
                     count += 1
@@ -146,8 +118,6 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
                         self.display_trucks_on_panel(position)
                     pygame.display.update()
                     print "displayed update"
-
-
             elif (active_sensor == sensors.getSensor("simulateInglenookSensor") or \
                   active_sensor == sensors.getSensor("simulateErrorsInglenookSensor")):
 
@@ -265,7 +235,7 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
             #     else:
             #         print("error positions value is wrong type for simulateCountingTrucks - contact Developer2")
 
-            elif active_sensor == sensors.getSensor("runRealTrainInglenookSensor"):
+            elif active_sensor == sensors.getSensor("runRealTrainInglenookDistributionSensor"):
                 #same call as for Simulation. Checks for this sensor are done in the call. We use all the chacks tested in Simulation Errors.
                 position = next(positions)
                 if type(position[0]) is str:
@@ -518,24 +488,97 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
         time.sleep(sleeping_interval)
 
 
-    def set_positions_of_trucks(self):
+    def set_positions_of_trucks(self, no_trucks, distribute_trucks):
 
-        positions_of_trucks = [deque([2, 1, 5, 3, 4]), deque([6, 7, 8]), deque([]), deque([0]), deque(), deque(), deque()]
-        # positions_of_trucks = [deque([2, 1, 5, 3, 4]), deque([6, 7, 8]), deque([6]), deque([9, 0, 0, 9]), \
-        #                        deque([0,6, 7]), deque([6, 7]), deque([ 7])]
-        # positions_of_trucks = [deque([2, 1, 5, 3, 4]), deque([6, 7, 8]), deque([6]), deque([9, 0, 0, 9]), \
-        #                                deque([0,6, 7]), deque([6, 7]), deque([ 7])]
-        #positions_of_trucks = [[2, 1, 5, 3, 4], [6, 7, 8], [], [], []]
+        [no_trucks_short, no_trucks_long, no_trucks_total] = self.no_trucks
 
-        positions_of_trucks = [deque([2, 1, 3, 5]), deque([4, 6, 7]), deque([]), deque([0]), deque(), deque(), deque()]
+        if distribute_trucks:
+            positions_of_trucks = set_positions_of_trucks_distribution(no_trucks)
+
+        else:
+            positions_of_trucks = set_positions_of_trucks_no_distribution(no_trucks)
+
         return positions_of_trucks
 
+    def set_positions_of_trucks_no_distribution(self):
 
-    def determine_required_positions_of_trucks(self, positions_of_trucks, size_long_siding, size_short_sidings):
+        [no_trucks_short, no_trucks_long, no_trucks_total] = self.no_trucks
+
+        if no_trucks_long == 5:
+            positions_of_trucks = [deque([2, 1, 5, 3, 4]), deque([6, 7, 8]), deque([]), deque([0]), deque(), deque(), deque()]
+        elif no_trucks_long == 4:
+            if no_trucks_short == 3:
+                positions_of_trucks = [deque([2, 1, 3, 5]), deque([4, 6, 7]), deque([]), deque([0]), deque(), deque(), deque()]
+            elif no_trucks_short == 2:
+                positions_of_trucks = [deque([2, 1, 3, 5]), deque([4, 6]), deque([]), deque([0]), deque(), deque(), deque()]
+        elif no_trucks_long == 3:
+            ppositions_of_trucks = [deque([2, 1, 3]), deque([4]), deque([]), deque([0]), deque(), deque(), deque()]
+
+    def set_positions_of_trucks_distribution(self):
+
+        [no_trucks_short, no_trucks_long, no_trucks_total] = self.get_no_trucks()
+
+        if no_trucks_long == 5:
+            positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([8,7,6,5,4,3,2,1,0]), deque(), deque()]
+        elif no_trucks_long == 4:
+            if no_trucks_short == 3:
+                positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([7,6,5,4,3,2,1,0]), deque(), deque()]
+            elif no_trucks_short == 2:
+                positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([6,5,4,3,2,1,0]), deque(), deque()]
+        elif no_trucks_long == 3:
+            positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([4,3,2,1,0]), deque(), deque()]
+
+        return positions_of_trucks
+
+    def distribute_trucks(self):
+
+
+        no_trucks = self.get_no_trucks()
+
+        # assume trucks have been backed up to siding_long
+
+        # note position
+
+
+        # need to distribute them
+        [no_trucks_short, no_trucks_long, no_trucks_total] = self.get_no_trucks()
+        [turnout_short, turnout_long, turnout_main] = self.get_sidings()
+        [turnout_short_direction, turnout_long_direction, turnout_main_direction] = self.get_turnout_directions()
+
+        # put no_trucks_long on siding_long
+
+        no_trucks_to_move = no_trucks_long
+        destBranch = 1      # siding_long
+        fromBranch = 4      # sput
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
+        # put rest of trucks on siding 2
+
+        no_trucks_to_move = 0
+        destBranch = 4      # sput
+        fromBranch = 1      # siding_long
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
+        # put rest on siding_short
+
+        no_trucks_to_move = no_trucks_total - no_trucks_long
+        destBranch = 4      # sput
+        fromBranch = 1      # siding_long
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
+    def determine_required_positions_of_trucks(self, positions_of_trucks, size_long_siding, size_short_sidings, distribute_trucks):
+
+        #if we are running the real simulation, then we need to distribute the trucks first
+
         print "determine_required_positions_of_trucks"
-        # for i in range(0,2):
-        #    assert len(pegs[i]) == noPegs[i], 'not enough disks on peg'
         yield positions_of_trucks
+
+        if distribute_trucks:        # train comes into sidings from main with all the trucks
+            self.distribute_trucks()
+
         # now run the shunting puzzle
         ingle = Inglenook(positions_of_trucks, size_long_siding, size_short_sidings)  # class Inglenook
         print "set up ingle"
@@ -547,9 +590,6 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
             yield p
         print "end of determine_required_positions_of_trucks"
 
-        # assert ingle.positions.count(1) == 1
-        # assert ingle.branches.count(1) == 5
-        # assert ingle.branches.count(2) == 3
 
 
 

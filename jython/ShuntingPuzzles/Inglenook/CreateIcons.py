@@ -21,6 +21,7 @@ from javax.swing import JOptionPane
 class processPanels():
 
     logLevel = 0
+    version_no = 1.2    #used to delete InglenookPanel for new versions if the number of controlsensors/icons has changed
 
     list_of_inglenook_sidings = []
     blockPoints = {}   # Block center points used by direct access process
@@ -34,10 +35,12 @@ class processPanels():
     # as a convention they all contain Inglenook so they are forced to be different
     controlSensors.append([i, 'startInglenookSensor', 'Run Inglenook System', 0, 0]); i += 1
     controlSensors.append([i, 'stopInglenookSensor', 'Stop Inglenook System', 0, 0]); i += 1
-    controlSensors.append([i, 'justShowSortingInglenookSensor', 'Just Show Sorting Inglenook System', 10, 5]); i += 1
+    controlSensors.append([i, 'justShowSortingInglenookSensor', 'Just Show Sorting', 10, 5]); i += 1
     controlSensors.append([i, 'simulateInglenookSensor', 'Simulate Inglenook System', 10, 5]); i += 1
     controlSensors.append([i, 'simulateErrorsInglenookSensor', 'Simulate With Errors', 10, 5]); i += 1
-    controlSensors.append([i, 'runRealTrainInglenookSensor', 'Run Real Train Inglenook System', 10, 5]); i += 1
+    controlSensors.append([i, 'simulateDistributionInglenookSensor', 'Simulate From Mainline', 10, 5]); i += 1
+    controlSensors.append([i, 'runRealTrainNoDistributionInglenookSensor', 'Run Real Train From Siding', 10, 5]); i += 1
+    controlSensors.append([i, 'runRealTrainDistributionInglenookSensor', 'Run Real Train from Mainline', 10, 5]); i += 1
     controlSensors.append([i, 'soundInglenookSensor', 'Enable Inglenook Announcements', 0, 5]); i += 1
     controlSensors.append([i, 'bellInglenookSensor', 'Enable Inglenook Bell', 0, 5]); i += 1
     controlSensors.append([i, 'showTrucksOnPanelInglenookSensor', 'Show Trucks On inglenook Panel', 0, 5]); i += 1
@@ -46,7 +49,6 @@ class processPanels():
     i = 1
     otherSensors = []
     otherSensors.append([i, "stopThreadSensor"])
-
 
     def __init__(self):
         self.define_DisplayProgress_global()
@@ -66,9 +68,15 @@ class processPanels():
             # self.addLogixNG()
             self.show_progress(70)
             self.addIcons()
+            self.setVersionNo()
             self.end_show_progress()
             msg = 'The JMRI tables and panels have been updated to support the Inglenook Siding System\nA store is recommended.'
             JOptionPane.showMessageDialog(None, msg, 'Message', JOptionPane.WARNING_MESSAGE)
+
+    def setVersionNo(self):
+        memory = memories.provideMemory('IS:ISMEM:' + "versionNo")
+        if memory is not None:
+            memory.setValue(self.version_no)
 
     def define_DisplayProgress_global(self):
         global dpg
@@ -287,14 +295,29 @@ class processPanels():
     # remove icons and labels from panels
     # **************************************************
     def removeIconsAndLabels(self):
+        i = 1
         for panel in self.editorManager.getAll(jmri.jmrit.display.layoutEditor.LayoutEditor):
             if panel.getTitle() == 'Inglenook System':
+                print i, "panel:" , panel.getTitle()
+        print "end"
+        i = 1
+        for panel in self.editorManager.getAll(jmri.jmrit.display.layoutEditor.LayoutEditor):
+            print i, "panel:" , panel.getTitle()
+            if panel.getTitle() == 'Inglenook System':
+                if self.version_number_changed():
+                    print "removing panel, version number changed"
+                    self.editorManager.remove(panel)
+                    # panel.deletePanel()
+                    panel.dispose()
+                    msg = "should have removed panel"
+                    Query().displayMessage(msg,"")
                 # Skip the Dispatcher System control panel if it exists
                 continue
 
             # self.removeBlockContentIcons(panel)
             self.removeLabels(panel)
             self.removeSensorIcons(panel)
+
 
     def removeBlockContentIcons(self, panel):
         deleteList = []     # Prevent concurrent modification
@@ -368,7 +391,8 @@ class processPanels():
     # **************************************************
     def removeSensors(self):
         controlName = []
-        if self.editorManager.get("Inglenook System") is None:
+        # if self.editorManager.get("Inglenook System") is None:
+        if self.version_number_changed():
             # OK to delete control sensors
             for control in self.controlSensors:
                 controlName.append(control[1])
@@ -390,9 +414,22 @@ class processPanels():
             #         deleteList.append(sensor)
 
         for item in deleteList:
-            print 'remove sensor {}'.format(item.getDisplayName())
+            if self.logLevel > 0: print 'remove sensor {}'.format(item.getDisplayName())
 
             sensors.deleteBean(item, 'DoDelete')
+
+    def version_number_changed(self):
+        memory = memories.getMemory('IMIS:ISMEM:' + "versionNo")
+        print "memory", memory, type(memory)
+        if memory is None:
+            print "version_no changed", "memory:", "version", self.version_no
+            return True
+        elif memory.getValue() != self.version_no:
+            print "version_no changed", "memory:", memory.getValue(), "version", self.version_no
+            return True
+        else:
+            print "version_no not changed", "memory:", memory.getValue(), "version", self.version_no
+            return False
 
     # ***********************************************************
     # gets the list of stopping points (stations, sidings etc.)
@@ -424,14 +461,14 @@ class processPanels():
                         pass
                     #self.list_of_inglenook_sidings.append(block.getUserName())
         if self.list_of_inglenook_sidings == None:
-            print "sidings have not been set up (None)"
+            if self.logLevel > 0: print "sidings have not been set up (None)"
             return
 
         if len(self.list_of_inglenook_sidings) == 0:
-            print "sidings have not been set up"
+            if self.logLevel > 0: print "sidings have not been set up"
             return
             #need a messagebox here
-        print "sidings have been set up", self.list_of_inglenook_sidings
+        if self.logLevel > 0: print "sidings have been set up", self.list_of_inglenook_sidings
 
     def add_truck_blocks(self, block_name, number_blocks, siding_name):
 
@@ -496,7 +533,7 @@ class processPanels():
         lgx = lgxManager.createNewLogix('IX:ISLX:1', 'Run Inglenook')
         cdl = cdlManager.createNewConditional('IX:ISLX:1C2', 'Run Inglenook')
         if cdl is not None:
-            print "cnd is not none"
+            if self.logLevel > 0: print "cnd is not none"
             cdl.setUserName('Run Inglenook')
             vars = []
             vars.append(jmri.ConditionalVariable(False, jmri.Conditional.Operator.AND, jmri.Conditional.Type.SENSOR_ACTIVE, 'startInglenookSensor', True))
@@ -519,23 +556,18 @@ class processPanels():
     # add Icons
     # **************************************************
     def addIcons(self):
-        print "in addIcons"
-        for panel in self.editorManager.getAll(jmri.jmrit.display.layoutEditor.LayoutEditor):
-            # self.getBlockCenterPoints(panel)
-            #
-            # self.addStopIcons(panel)
-            # self.addOccupancyIconsAndLabels(panel)
-            self.addControlIconsAndLabels(panel)
-            print "added control icons"
-            self.getSidingBlockCenterPoints(panel)
-            print "added SidingBlockCenterPoints"
-            self.direction = self.checkOrientationOfPuzzle(panel)
-            print "added checkOrientationOfPuzzle", self.direction
-            if self.direction != None:
-                print "***************direction", self.direction
-                self.addTruckIcons(panel)
-            else:
-                print "error"
+        if self.logLevel > 0: print "in addIcons"
+        self.addControlIconsAndLabels(panel)
+        if self.logLevel > 0: print "added control icons"
+        # self.getSidingBlockCenterPoints(panel)
+        # print "added SidingBlockCenterPoints"
+        self.direction = self.checkOrientationOfPuzzle(panel)
+        if self.logLevel > 0: print "added checkOrientationOfPuzzle", self.direction
+        if self.direction != None:
+            if self.logLevel > 0: print "***************direction", self.direction
+            self.addTruckIcons(panel)
+        else:
+            print "error"
 
     def checkOrientationOfPuzzle(self, panel):
         LayoutBlockManager=jmri.InstanceManager.getDefault(jmri.jmrit.display.layoutEditor.LayoutBlockManager)
@@ -547,54 +579,54 @@ class processPanels():
                         no_neighbours = layoutblock.getNumberOfNeighbours()
                         if no_neighbours == 1:  #there should only be one neighbour at ingsiding1
                             neighbor = layoutblock.getNeighbourAtIndex(0)
-                            print neighbor.getDisplayName()
+                            if self.logLevel > 0: print neighbor.getDisplayName()
                             direction =layoutblock.getNeighbourDirection(neighbor)
-                            print direction
+                            if self.logLevel > 0: print direction
                             return "direction", direction
                         else:
                             print "Error"
                             return None
         return None
 
-    def getSidingBlockCenterPoints(self, panel):
-        self.blockPoints.clear()
-        for tsv in panel.getTrackSegmentViews():
-            blk = tsv.getBlockName()
-
-            pt1 = panel.getCoords(tsv.getConnect1(), tsv.getType1())
-            pt2 = panel.getCoords(tsv.getConnect2(), tsv.getType2())
-
-            mid = jmri.util.MathUtil.midPoint(pt1, pt2)
-
-            self.updateCoords(blk, mid)
-
-        for tov in panel.getLayoutTurnoutAndSlipViews():
-            blkA = tov.getBlockName()
-            blkB = tov.getBlockBName()
-            blkC = tov.getBlockCName()
-            blkD = tov.getBlockDName()
-
-            xyA = tov.getCoordsA()
-            xyB = tov.getCoordsB()
-            xyC = tov.getCoordsC()
-            xyD = tov.getCoordsD()
-
-            self.updateCoords(blkA, xyA)
-            self.updateCoords(blkB, xyB)
-            self.updateCoords(blkC, xyC)
-            self.updateCoords(blkD, xyD)
-
-        for lxv in panel.getLevelXingViews():
-            blkAC = lxv.getBlockNameAC()
-            blkBD = lxv.getBlockNameBD()
-
-            # A level crossing has 4 points but only two blocks.  To prevent both points being in the
-            # middle, use the A and D points.
-            xyA = lxv.getCoordsA()
-            xyD = lxv.getCoordsD()
-
-            self.updateCoords(blkAC, xyA)
-            self.updateCoords(blkBD, xyD)
+    # def getSidingBlockCenterPoints(self, panel):
+    #     self.blockPoints.clear()
+    #     for tsv in panel.getTrackSegmentViews():
+    #         blk = tsv.getBlockName()
+    #
+    #         pt1 = panel.getCoords(tsv.getConnect1(), tsv.getType1())
+    #         pt2 = panel.getCoords(tsv.getConnect2(), tsv.getType2())
+    #
+    #         mid = jmri.util.MathUtil.midPoint(pt1, pt2)
+    #
+    #         self.updateCoords(blk, mid)
+    #
+    #     for tov in panel.getLayoutTurnoutAndSlipViews():
+    #         blkA = tov.getBlockName()
+    #         blkB = tov.getBlockBName()
+    #         blkC = tov.getBlockCName()
+    #         blkD = tov.getBlockDName()
+    #
+    #         xyA = tov.getCoordsA()
+    #         xyB = tov.getCoordsB()
+    #         xyC = tov.getCoordsC()
+    #         xyD = tov.getCoordsD()
+    #
+    #         self.updateCoords(blkA, xyA)
+    #         self.updateCoords(blkB, xyB)
+    #         self.updateCoords(blkC, xyC)
+    #         self.updateCoords(blkD, xyD)
+    #
+    #     for lxv in panel.getLevelXingViews():
+    #         blkAC = lxv.getBlockNameAC()
+    #         blkBD = lxv.getBlockNameBD()
+    #
+    #         # A level crossing has 4 points but only two blocks.  To prevent both points being in the
+    #         # middle, use the A and D points.
+    #         xyA = lxv.getCoordsA()
+    #         xyD = lxv.getCoordsD()
+    #
+    #         self.updateCoords(blkAC, xyA)
+    #         self.updateCoords(blkBD, xyD)
 
     def updateCoords(self, blk, xy):
         if blk is not None:
@@ -611,13 +643,13 @@ class processPanels():
             direction = "east"
         else:
             direction = "west"  # 128
-        print "direction", direction
+        if self.logLevel > 0: print "direction", direction
         for [blockName, number_blocks, siding_name] in self.list_of_inglenook_sidings:
-            print [blockName, number_blocks, siding_name]
+            if self.logLevel > 0: print [blockName, number_blocks, siding_name]
             if blockName in self.blockPoints.keys():
                 x = self.blockPoints[blockName].getX()
                 y = self.blockPoints[blockName].getY()
-                print "adding truck icons"
+                if self.logLevel > 0: print "adding truck icons"
                 #Truck Icons
                 for i in range(number_blocks):
                     sensor_name = siding_name + "_" + str(i)
@@ -635,10 +667,10 @@ class processPanels():
                         beginning = (spacing * number_blocks)/2 - spacing
                         offset = -spacing * i
                     offset = beginning + offset
-                    print "sensor_name", 'TruckIndication_' + sensor_name
+                    if self.logLevel > 0: print "sensor_name", 'TruckIndication_' + sensor_name
                     mtSensor = sensors.getSensor('TruckIndication_' + sensor_name )
                     if mtSensor is not None:
-                        print "add", mtSensor.getUserName(), x, y
+                        if self.logLevel > 0: print "add", mtSensor.getUserName(), x, y
                         if siding_name.isdigit():
                             textno = str(i)
                         else:
@@ -648,12 +680,12 @@ class processPanels():
                     # mpSensor = sensors.getSensor('Decoupling_' + siding_name)
                     sensor_name = "siding"+ siding_name if siding_name != "spur" else "spur"
                     siding = "#IS_"+sensor_name+"_sensor#"
-                    print "*****************siding", siding, "siding_name", siding_name
+                    if self.logLevel > 0: print "*****************siding", siding, "siding_name", siding_name
                     mpSensor = self.get_decoupling_sensor(siding)
                     if mpSensor is not None:
                         if i == number_blocks-4:
                             # print "add", mpSensor.getUserName(), x, y
-                            print "direction1", direction1
+                            if self.logLevel > 0: print "direction1", direction1
                             if direction1 == "west":
                                 # if siding_name != 'sensor_spur':
                                 self.addSmallIcon(panel, mpSensor.getDisplayName(), x + offset  + 0.8*spacing , y-18)
@@ -692,9 +724,13 @@ class processPanels():
     # control sensor icons and label
     # **************************************************
     def addControlIconsAndLabels(self, panel):
-        if self.editorManager.get("Inglenook System") is not None:
+        # if self.editorManager.get("Inglenook System") is not None:
+        #     return
+        if not self.version_number_changed():
+            if self.logLevel > 0: print "not adding control Icons and labels"
             return
 
+        if self.logLevel > 0: print "adding control Icons and labels"
         # Create the Dispatcher System control panel
         panel = jmri.jmrit.display.layoutEditor.LayoutEditor("Inglenook System")
         self.editorManager.add(panel)
@@ -751,7 +787,7 @@ class processPanels():
     # marker icon
     # **************************************************
     def addMarkerIcon(self, panel, sensor, blockName, x, y, No):
-        print "addmarkericon"
+        if self.logLevel > 0: print "addmarkericon"
         icn = jmri.jmrit.display.SensorIcon(panel)
         truck_icon = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/icons/truck6.gif')
         engine_icon = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/icons/engine1.gif')
@@ -770,14 +806,13 @@ class processPanels():
         if No == "1":
             truck_icon = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/icons/truckred.gif')
 
-
         #icn.setText(blockName[:9])
         icn.setText(No)
         icn.setActiveText(No)
         icn.setInactiveText(No)
         icn.setInconsistentText(No)
         icn.setUnknownText(No)
-        print "text", icn.getText()
+        if self.logLevel > 0: print "text", icn.getText()
         icn.setTextActive(Color.WHITE)
         icn.setTextInActive(Color.YELLOW)
         icn.setTextInconsistent(Color.WHITE)
@@ -799,7 +834,7 @@ class processPanels():
         icn.setLocation(int(x), int(y))
 
         # Add the icon to the layout editor panel
-        print "putting sensor"
+        if self.logLevel > 0: print "putting sensor"
         panel.putSensor(icn)
 
     # **************************************************
@@ -837,6 +872,8 @@ class DisplayProgress:
 
 
 class Query:
+
+    CLOSED_OPTION = False
     def customQuestionMessage2(self, msg, title, opt1, opt2):
         self.CLOSED_OPTION = False
         options = [opt1, opt2]
@@ -852,3 +889,35 @@ class Query:
             self.CLOSED_OPTION = True
             return
         return s
+
+    def displayMessage(self, msg, title = "", display = True):
+        global display_message_flag
+
+        if 'display_message_flag' not in globals():
+            display_message_flag = True
+
+        # if display_message_flag:
+        if display:
+
+            s = JOptionPane.showOptionDialog(None,
+                                             msg,
+                                             title,
+                                             JOptionPane.YES_NO_OPTION,
+                                             JOptionPane.PLAIN_MESSAGE,
+                                             None,
+                                             ["OK"],
+                                             None)
+            if s == JOptionPane.CLOSED_OPTION:
+                title = "choose"
+                opt1 = "continue"
+                opt2 = "stop system"
+                msg = "you may wish to abort"
+                s1 = self.customQuestionMessage2str(msg, title, opt1, opt2)
+                if s1 == opt2:
+                    #stop system
+                    Mywindow2()
+                    StopMaster().stop_all_threads()
+
+                return s
+            #JOptionPane.showMessageDialog(None, msg, 'Message', JOptionPane.WARNING_MESSAGE)
+            return s

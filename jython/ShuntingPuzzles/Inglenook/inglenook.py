@@ -24,6 +24,7 @@ class Inglenook:
         self.size_long_siding = size_long_siding
         self.size_short_sidings = size_short_sidings
         print "self.size_long_siding", self.size_long_siding
+
     def solvePuzzle(self):
         destSiding = 1
         for requiredPosition in range(self.size_long_siding,0,-1):
@@ -518,6 +519,8 @@ class Inglenook:
         # print (self.pegs)
         # print( self.pegs[branchNo - 1].count(truckNo)>0)
         return self.pegs[branchNo - 1].count(truckNo)>0
+
+
 
 if __name__ == '__main__':
     ingle = Inglenook()

@@ -544,8 +544,8 @@ class RunInglenookMaster():
         # Inglenook_run2 = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/inglenook/inglenook_run2.py')
         # exec(open (Inglenook_run2).read())
 
-        StartInglenook = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/inglenook/startInglenookSystem.py')
-        exec(open (StartInglenook).read())
+        # StartInglenook = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/inglenook/startInglenookSystem.py')
+        # exec(open (StartInglenook).read())
 
         # Inglenook = jmri.util.FileUtil.getExternalFilename('program:jython/ShuntingPuzzles/inglenook/inglenook.py')
         # exec(open (Inglenook).read())
@@ -577,7 +577,7 @@ class RunInglenookMaster():
         sensors.getSensor("simulateErrorsInglenookSensor").setKnownState(INACTIVE)
         sensors.getSensor("simulateInglenookSensor").setKnownState(INACTIVE)
         sensors.getSensor("simulateErrorsInglenookSensor").setKnownState(INACTIVE)
-        sensors.getSensor("runRealTrainInglenookSensor").setKnownState(INACTIVE)
+        sensors.getSensor("runRealTrainInglenookDistributionSensor").setKnownState(INACTIVE)
 
 
 

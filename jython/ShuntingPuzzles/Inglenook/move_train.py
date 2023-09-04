@@ -252,7 +252,6 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
         global display_message_flag
         global decide_what_to_do_instruction
         self.indent()
-        decide_what_to_do_instruction = "fred"
         self.positions = positions
         self.screen = screen         # for display_update
         self.position = position     # for display_update
@@ -503,7 +502,7 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
         #global throttle
         self.indent()
         self.myprint("in set speed: setting to " + str(speed))
-        if sensors.getSensor("runRealTrainInglenookSensor").getKnownState() == ACTIVE:
+        if sensors.getSensor("runRealTrainInglenookDistributionSensor").getKnownState() == ACTIVE:
             if throttle.getSpeedSetting() != speed:
                 throttle.setSpeedSetting(speed)
                 self.myprint("end set speed to " + str(speed))
@@ -517,7 +516,7 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
         #global throttle
         self.indent()
         self.myprint("in set speed: setting to " + str(speed))
-        if sensors.getSensor("runRealTrainInglenookSensor").getKnownState() == ACTIVE:
+        if sensors.getSensor("runRealTrainInglenookDistributionSensor").getKnownState() == ACTIVE:
             if throttle.getSpeedSetting() != speed:
                 throttle.setSpeedSetting(speed)
                 self.myprint("end set speed to " + str(speed) + "with delay " + str(delay))
@@ -624,13 +623,13 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
         if toBranch != self.spur_branch:
             # set loco to forward
             self.myprint("Set Loco Forward")
-            if sensors.getSensor("runRealTrainInglenookSensor").getKnownState() == ACTIVE:
+            if sensors.getSensor("runRealTrainInglenookDistributionSensor").getKnownState() == ACTIVE:
                 throttle.setIsForward(True)
             direction = "to_siding"
         else:
             # set loco to reverse
             self.myprint("Set Loco backward")
-            if sensors.getSensor("runRealTrainInglenookSensor").getKnownState() == ACTIVE:
+            if sensors.getSensor("runRealTrainInglenookDistributionSensor").getKnownState() == ACTIVE:
                 throttle.setIsForward(False)
             direction = "to_spur"
         self.myprint1 ("end setDirection ", direction)
@@ -643,12 +642,12 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
         self.myprint ("in changeDirection ")
         #global throttle
         if throttle.getIsForward():
-            if sensors.getSensor("runRealTrainInglenookSensor").getKnownState() == ACTIVE:
+            if sensors.getSensor("runRealTrainInglenookDistributionSensor").getKnownState() == ACTIVE:
                 throttle.setIsForward(False)
             self.myprint("Changed direction, reverse")
             direction = "forwards"
         else:
-            if sensors.getSensor("runRealTrainInglenookSensor").getKnownState() == ACTIVE:
+            if sensors.getSensor("runRealTrainInglenookDistributionSensor").getKnownState() == ACTIVE:
                 throttle.setIsForward(True)
             self.myprint("Changed direction, forward")
             direction = "reverse"
@@ -714,7 +713,7 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
         InglenookMaster().display_trucks_on_panel(self.pegs)
 
     def set_delay_if_not_simulation(self, msec):
-        if sensors.getSensor("runRealTrainInglenookSensor").getKnownState() == ACTIVE:
+        if sensors.getSensor("runRealTrainInglenookDistributionSensor").getKnownState() == ACTIVE:
             # seld.waitMsec(msec)
             pass
 
@@ -834,7 +833,7 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
 
     @print_name()
     def really_doit_countTrucksInactive(self, sensor):
-        do_it = (sensors.getSensor("runRealTrainInglenookSensor").getKnownState() == ACTIVE)
+        do_it = (sensors.getSensor("runRealTrainInglenookDistributionSensor").getKnownState() == ACTIVE)
         if do_it:
             self.waitChangeSensorInactive(sensor)
             self.waitMsec(1000)
@@ -842,7 +841,7 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
 
     @print_name()
     def really_doit_countTrucksActive(self, sensor):
-        do_it = (sensors.getSensor("runRealTrainInglenookSensor").getKnownState() == ACTIVE)
+        do_it = (sensors.getSensor("runRealTrainInglenookDistributionSensor").getKnownState() == ACTIVE)
         if do_it:
             self.waitChangeSensorActive(sensor)
             self.waitMsec(1000)
@@ -1043,7 +1042,7 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
             print ("time taken", Date().getTime() - start)
             print ("should have timed out")
             # the alt_function will be called
-        elif sensors.getSensor("runRealTrainInglenookSensor").getState() == ACTIVE:
+        elif sensors.getSensor("runRealTrainInglenookDistributionSensor").getState() == ACTIVE:
             self.myprint2 ("running real train")
             simulateOneTruck = True
             direction = self.setDirection(sidingBranch, self.spur_branch)
@@ -1110,7 +1109,7 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
             self.countTrucksActive(noTrucksToCount, sensor, direction, sidingBranch)  # counts from 0
             self.set_delay_if_not_simulation(2000)
             print ("time taken a", Date().getTime() - start)
-        elif sensors.getSensor("runRealTrainInglenookSensor").getState() == ACTIVE:
+        elif sensors.getSensor("runRealTrainInglenookDistributionSensor").getState() == ACTIVE:
             self.myprint2 ("simulating with errors but success this time")
             direction = self.setPointsAndDirection(sidingBranch, self.spur_branch)
             sensor = self.setSensor(sidingBranch)
@@ -1145,7 +1144,7 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
             time_to_countInactive_one_truck = "8000"   # msec
         elif sensors.getSensor("simulateInglenookSensor").getState() == ACTIVE:
             time_to_countInactive_one_truck = "500"
-        elif sensors.getSensor("runRealTrainInglenookSensor").getState() == ACTIVE:
+        elif sensors.getSensor("runRealTrainInglenookDistributionSensor").getState() == ACTIVE:
             time_to_countInactive_one_truck = "5000"
         return time_to_countInactive_one_truck
     @print_name()

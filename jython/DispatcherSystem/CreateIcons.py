@@ -607,7 +607,6 @@ class processPanels(jmri.jmrit.automat.AbstractAutomaton):
     def addIcons(self):
         for panel in self.editorManager.getAll(jmri.jmrit.display.layoutEditor.LayoutEditor):
             self.getBlockCenterPoints(panel)
-
             self.addStopIcons(panel)
             self.addOccupancyIconsAndLabels(panel)
         #add control icons in separate editor panel

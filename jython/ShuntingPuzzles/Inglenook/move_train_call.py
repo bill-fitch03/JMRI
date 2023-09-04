@@ -10,25 +10,33 @@ import globals
 
 
 @print_name()
-def decide_what_to_do_first(self):
+def decide_what_to_do_first(self, active_sensor):
     print "calling decide_what_to_do_first in move_train_call"
     self.indent()
     # set up the trucks 5 in branch 3 and 3 in branch 2, and return to branch 4
     # self.noTrucksOnTrain = 0
+    if active_sensor != sensors.getSensor("runRealTrainDistributionInglenookSensor"):
+        self.myprint("decide_what_to_do_first *")
 
-    self.myprint("decide_what_to_do_first *")
+        self.noTrucksOnTrain = 0
+        self.previousBranch = self.spur_branch
+        self.noTrucksToMoveFromPreviousStep = 0
+        self.numberTrucksToMove_previous = 0
 
-    self.noTrucksOnTrain = 0
-    self.previousBranch = self.spur_branch
-    self.noTrucksToMoveFromPreviousStep = 0
-    self.numberTrucksToMove_previous = 0
+        self.myprint("self.noTrucksOnTrain:" + str(self.noTrucksOnTrain))
+        self.myprint("self.previousBranch:" + str(self.previousBranch))
+    else:
+        positions_of_trucks = self.set_positions_of_trucks()
 
-    self.myprint("self.noTrucksOnTrain:" + str(self.noTrucksOnTrain))
-    self.myprint("self.previousBranch:" + str(self.previousBranch))
+        self.move_to_initial_position()
+
     # instruction_first = [generate_first_instructions]
     # self.noTrucksOnTrain = self.decide_what_to_do(instruction_first,self.noTrucksOnTrain)
     self.myprint("end decide_what_to_do_first")
     self.dedent()
+
+
+def move_to_initial_position(self):
 
 
 # @print_name()
