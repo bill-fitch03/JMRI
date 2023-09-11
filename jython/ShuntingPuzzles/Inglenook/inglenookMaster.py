@@ -2,6 +2,7 @@ from inglenook import Inglenook
 from timeout import alternativeaction, variableTimeout, print_name, timeout
 import time
 import java
+import jmri
 import copy
 from javax.swing import JLabel
 from collections import deque
@@ -49,7 +50,7 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
         self.get_inglenook_run_or_simulate_buttons = \
             [sensors.getSensor(sensorName) for sensorName in \
                 ["justShowSortingInglenookSensor", "simulateInglenookSensor", \
-                 "simulateErrorsInglenookSensor", "runRealTrainInglenookDistributionSensor"]]
+                 "simulateErrorsInglenookSensor", "runRealTrainDistributionInglenookSensor"]]
 
         self.waitSensorActive(self.get_inglenook_run_or_simulate_buttons)
 
@@ -59,7 +60,7 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
         size_short_sidings = 3
 
         self.act_on_sensors(sensor_that_went_active, size_long_siding, size_short_sidings)
-
+        print "qwertyu **************************"
         sensor_that_went_active.setKnownState(INACTIVE)
 
 
@@ -71,12 +72,16 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
         self.no_trucks = self.get_no_trucks()
         [no_trucks_short, no_trucks_long, no_trucks_total] = self.no_trucks
 
-        initial_positions_of_trucks = self.set_positions_of_trucks()
+        print "[no_trucks_short, no_trucks_long, no_trucks_total]", [no_trucks_short, no_trucks_long, no_trucks_total]
 
-        if active_sensor == sensors.getSensor("runRealTrainInglenookDistributionSensor"):
+        if active_sensor == sensors.getSensor("runRealTrainDistributionInglenookSensor"):
             distribute_trucks = True
         else:
             distribute_trucks = False
+
+        initial_positions_of_trucks = self.set_positions_of_trucks(distribute_trucks)
+
+        print "initial_positions_of_trucks", initial_positions_of_trucks
 
         # the required positions of the trucks are generated using yield statements
         positions = self.determine_required_positions_of_trucks(initial_positions_of_trucks, size_long_siding, size_short_sidings, distribute_trucks)
@@ -235,20 +240,93 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
             #     else:
             #         print("error positions value is wrong type for simulateCountingTrucks - contact Developer2")
 
-            elif active_sensor == sensors.getSensor("runRealTrainInglenookDistributionSensor"):
-                #same call as for Simulation. Checks for this sensor are done in the call. We use all the chacks tested in Simulation Errors.
-                position = next(positions)
-                if type(position[0]) is str:
-                    train.decide_what_to_do(screen, positions, position)
-                else:
-                    print "position" , position
-                    print("error positions value is wrong type for Simulation - contact Developer3")
+            elif active_sensor == sensors.getSensor("runRealTrainDistributionInglenookSensor"):
+                print "Called justShowSortingInglenookSensor"
+                count = 0
+                for position in positions:
+                    print "next position"
+                    count += 1
+                    print ("******************", count, position)
+                    if type(position[0]) is str:
+                        # this is a command for the train
+                        #train.decide_what_to_do(position)
+                        #train.update_position
+                        if position[0] == "display_message":
+                            [instruction, message] = position
+                            self.dialogs.displayMessage("msg = : " + message)
+                    else:
+                        print("!!!!!!!!!!! this is a command for simulation 1", position)
+                        # this is a command for pygame simulation
+                        self.display_trucks_on_insert(position, screen)
+                        print "display truck on panel"
+                        self.display_trucks_on_panel(position)
+                    pygame.display.update()
+                    print "displayed update"
+
+
+
+
+
+
+                # #same call as for Simulation. Checks for this sensor are done in the call. We use all the chacks tested in Simulation Errors.
+                # position = next(positions)
+                # if type(position[0]) is str:
+                #     train.decide_what_to_do(screen, positions, position)
+                # else:
+                #     print "position" , position
+                #     print("error positions value is wrong type for Simulation - contact Developer3")
             else:
                 print "invalid option - Contact Developer"
 
             # time.sleep(sleeping_interval)
 
         print "end of inglenookMaster.py"
+
+
+    def get_no_trucks(self):
+
+        no_trucks_short = self.get_no_trucks1("short")
+        no_trucks_long = self.get_no_trucks1("long")
+        no_trucks_total = self.get_no_trucks1("total")
+
+        return [no_trucks_short, no_trucks_long, no_trucks_total]
+
+    def get_no_trucks1(self, no_trucks_str):
+        #no_trucks is of the form short, long, total
+        no_trucks = memories.getMemory('IMIS:no_trucks_' + no_trucks_str)
+        print "$$$$$$$$$$$$$$$$", no_trucks, 'IMIS:no_trucks_' + no_trucks_str
+        return int(no_trucks.getValue())
+
+    # def get_no_trucks1(self, noTrucks):
+    #     #noTrucks is of the form %no_trucks_long^5^% or %no_trucks_short^5^%
+    #
+    #     ##print "get_no_trucks"
+    #
+    #     s = noTrucks.split("%")[1]   # notrucks..^5^
+    #     s1 = s.split("^")[0]         # notrucks..
+    #     s2 = s.split("^")[1]         # 5
+    #     #print "siding", s, "s1", s1, "s2", s2
+    #     for turnout in turnouts.getNamedBeanSet():
+    #         comment = turnout.getComment()
+    #         if comment != None:
+    #             #print "comment" , comment
+    #             if "%" in comment:
+    #                 #print "% in comment"
+    #                 for t0 in  comment.split('%'):
+    #                     if "^" in t0:
+    #                         t = str(t0)
+    #                 #print "t", t
+    #                 t1 = t.split("^")[0]         # notrucks..
+    #                 t2 = t.split("^")[1]         # 5
+    #                 #print "comment" , comment
+    #                 #print "t1", t1, "t2", t2
+    #                 #print "s", s, "comment.split('#')[0]", str(comment.split('#')[1]), "sensor", sensor, sensor.getUserName()
+    #                 if t1 == s1:
+    #                     #print "returning ", t2
+    #                     return t2
+    #                 #print "s",s,"x", str(comment.split('%')[1])
+    #     print "end get_no_trucks"
+    #     return None
 
     def check_old_position_is_ok(self, old_position, position, pegs_updated_by_simulation):
         return
@@ -488,15 +566,16 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
         time.sleep(sleeping_interval)
 
 
-    def set_positions_of_trucks(self, no_trucks, distribute_trucks):
+    def set_positions_of_trucks(self, distribute_trucks):
 
+        print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ set positions of trucks $$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+        print "self.no_trucks", self.no_trucks
         [no_trucks_short, no_trucks_long, no_trucks_total] = self.no_trucks
 
         if distribute_trucks:
-            positions_of_trucks = set_positions_of_trucks_distribution(no_trucks)
-
+            positions_of_trucks = self.set_positions_of_trucks_distribution()
         else:
-            positions_of_trucks = set_positions_of_trucks_no_distribution(no_trucks)
+            positions_of_trucks = self.set_positions_of_trucks_no_distribution()
 
         return positions_of_trucks
 
@@ -512,27 +591,33 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
             elif no_trucks_short == 2:
                 positions_of_trucks = [deque([2, 1, 3, 5]), deque([4, 6]), deque([]), deque([0]), deque(), deque(), deque()]
         elif no_trucks_long == 3:
-            ppositions_of_trucks = [deque([2, 1, 3]), deque([4]), deque([]), deque([0]), deque(), deque(), deque()]
+            positions_of_trucks = [deque([2, 1, 3]), deque([4]), deque([]), deque([0]), deque(), deque(), deque()]
+        else:
+            positions_of_trucks = None
+
+        return positions_of_trucks
 
     def set_positions_of_trucks_distribution(self):
 
         [no_trucks_short, no_trucks_long, no_trucks_total] = self.get_no_trucks()
 
         if no_trucks_long == 5:
-            positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([8,7,6,5,4,3,2,1,0]), deque(), deque()]
+            positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([0,1,2,3,4,5,6,7,8]), deque(), deque()]
         elif no_trucks_long == 4:
             if no_trucks_short == 3:
-                positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([7,6,5,4,3,2,1,0]), deque(), deque()]
+                positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([0,1,2,3,4,5,6,7]), deque(), deque()]
             elif no_trucks_short == 2:
-                positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([6,5,4,3,2,1,0]), deque(), deque()]
+                positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([0,1,2,3,4,5,6]), deque(), deque()]
         elif no_trucks_long == 3:
-            positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([4,3,2,1,0]), deque(), deque()]
+            positions_of_trucks = [deque([]), deque([]), deque([]), deque([]), deque([0,1,2,3,4]), deque(), deque()]
+        else:
+            positions_of_trucks = None
 
         return positions_of_trucks
 
     def distribute_trucks(self):
 
-
+        print "distribute_trucks"
         no_trucks = self.get_no_trucks()
 
         # assume trucks have been backed up to siding_long
@@ -542,6 +627,7 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
 
         # need to distribute them
         [no_trucks_short, no_trucks_long, no_trucks_total] = self.get_no_trucks()
+        print "distribute_trucks2"
         [turnout_short, turnout_long, turnout_main] = self.get_sidings()
         [turnout_short_direction, turnout_long_direction, turnout_main_direction] = self.get_turnout_directions()
 
@@ -549,21 +635,21 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
 
         no_trucks_to_move = no_trucks_long
         destBranch = 1      # siding_long
-        fromBranch = 4      # sput
+        fromBranch = 5      # sput
 
         for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
-
+        print "distribute_trucks3"
         # put rest of trucks on siding 2
 
-        no_trucks_to_move = 0
-        destBranch = 4      # sput
-        fromBranch = 1      # siding_long
+        no_trucks_to_move = no_trucks_short
+        destBranch = 2     # sput
+        fromBranch = 5      # siding_long
 
         for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
 
         # put rest on siding_short
 
-        no_trucks_to_move = no_trucks_total - no_trucks_long
+        no_trucks_to_move = no_trucks_short
         destBranch = 4      # sput
         fromBranch = 1      # siding_long
 
@@ -573,21 +659,24 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
 
         #if we are running the real simulation, then we need to distribute the trucks first
 
-        print "determine_required_positions_of_trucks"
+        print "yield_required_positions_of_trucks", positions_of_trucks
         yield positions_of_trucks
+        print "determine_required_positions_of_trucks2"
 
-        if distribute_trucks:        # train comes into sidings from main with all the trucks
-            self.distribute_trucks()
-
-        # now run the shunting puzzle
         ingle = Inglenook(positions_of_trucks, size_long_siding, size_short_sidings)  # class Inglenook
-        print "set up ingle"
-        # don't need these
-        # ingle.init_position_branch()
-        print "calling solvePuzzle1"
-        for p in ingle.solvePuzzle():
-            # print "yielded p" , p
-            yield p
+        if distribute_trucks:        # train comes into sidings from main with all the trucks
+            print "distributing trucks"
+            for p in ingle.distribute_trucks():
+                yield p
+        # # now run the shunting puzzle
+        # ingle = Inglenook(positions_of_trucks, size_long_siding, size_short_sidings)  # class Inglenook
+        # print "set up ingle"
+        # # don't need these
+        # # ingle.init_position_branch()
+        # print "calling solvePuzzle1"
+        # for p in ingle.solvePuzzle():
+        #     # print "yielded p" , p
+        #     yield p
         print "end of determine_required_positions_of_trucks"
 
 

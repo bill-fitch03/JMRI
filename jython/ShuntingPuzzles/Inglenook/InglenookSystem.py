@@ -173,36 +173,50 @@ def get_siding_turnout(siding):
                 print "s",s,"x", str(comment.split('#')[1])
     return None
 
-def get_no_trucks(noTrucks):
-    #noTrucks is of the form %no_trucks_long^5^% or %no_trucks_short^5^%
+# def get_no_trucks(noTrucks):
+#     #noTrucks is of the form %no_trucks_long^5^% or %no_trucks_short^5^%
+#
+#     print "get_no_trucks"
+#
+#     s = noTrucks.split("%")[1]   # notrucks..^5^
+#     s1 = s.split("^")[0]         # notrucks..
+#     s2 = s.split("^")[1]         # 5
+#     print "siding", s, "s1", s1, "s2", s2
+#     for turnout in turnouts.getNamedBeanSet():
+#         comment = turnout.getComment()
+#         if comment != None:
+#             print "comment" , comment
+#             if "%" in comment:
+#                 print "% in comment"
+#                 for t0 in  comment.split('%'):
+#                     if "^" in t0:
+#                         t = str(t0)
+#                 print "t", t
+#                 t1 = t.split("^")[0]         # notrucks..
+#                 t2 = t.split("^")[1]         # 5
+#                 print "comment" , comment
+#                 print "t1", t1, "t2", t2
+#                 #print "s", s, "comment.split('#')[0]", str(comment.split('#')[1]), "sensor", sensor, sensor.getUserName()
+#                 if t1 == s1:
+#                     print "returning ", t2
+#                     return t2
+#                 print "s",s,"x", str(comment.split('%')[1])
+#     print "end get_no_trucks"
+#     return None
 
-    print "get_no_trucks"
+def get_no_trucks(no_trucks_str):
+    #no_trucks is of the form short, long, total
+    no_trucks = memories.getMemory('IMIS:no_trucks_' + no_trucks_str)
+    if no_trucks != None:
+        print "$$$$$$$$$$$$$$$$", no_trucks, 'IMIS:no_trucks_' + no_trucks_str
+        return no_trucks.getValue()
+    else:
+        return None
 
-    s = noTrucks.split("%")[1]   # notrucks..^5^
-    s1 = s.split("^")[0]         # notrucks..
-    s2 = s.split("^")[1]         # 5
-    print "siding", s, "s1", s1, "s2", s2
-    for turnout in turnouts.getNamedBeanSet():
-        comment = turnout.getComment()
-        if comment != None:
-            print "comment" , comment
-            if "%" in comment:
-                print "% in comment"
-                for t0 in  comment.split('%'):
-                    if "^" in t0:
-                        t = str(t0)
-                print "t", t
-                t1 = t.split("^")[0]         # notrucks..
-                t2 = t.split("^")[1]         # 5
-                print "comment" , comment
-                print "t1", t1, "t2", t2
-                #print "s", s, "comment.split('#')[0]", str(comment.split('#')[1]), "sensor", sensor, sensor.getUserName()
-                if t1 == s1:
-                    print "returning ", t2
-                    return t2
-                print "s",s,"x", str(comment.split('%')[1])
-    print "end get_no_trucks"
-    return None
+def set_no_trucks(no_trucks_str, no_trucks):
+    memory = memories.provideMemory('IS:no_trucks_' + no_trucks_str)
+    memory.setValue(no_trucks)
+
 
 def get_turnout_direction(turnoutName):
 
@@ -358,6 +372,8 @@ def update_no_trucks_short_comment(no_trucks_string, siding_turnout):
         no_trucks_comment = no_trucks_comment + " %no_trucks_short^" + no_trucks_string + "^%"
     siding_turnout.setComment(no_trucks_comment)
     print "end update_no_trucks_short_comment"
+
+
 
 # @print_name()
 def get_siding_sensor(siding):
@@ -525,21 +541,28 @@ def OK_action(event):
     [no_trucks_long_cb, no_trucks_short_cb, no_trucks_total_cb]= no_trucksComboBox
 
     no_trucks_long = no_trucks_long_cb.getSelectedItem()
-    T12_turnout_direction = T12_turnout_direction_cb.getSelectedItem()
-    if no_trucks_long != None:
-        # T12_turnout_direction1 = str(T12_turnout_direction)
-        print "no_trucks_long",no_trucks_long
-        update_no_trucks_long_comment(no_trucks_long, T3_turnout)
-    else:
-        delete_no_trucks_long_comment(T3_turnout)
+    set_no_trucks("long", no_trucks_long)
+    # T12_turnout_direction = T12_turnout_direction_cb.getSelectedItem()
+    # if no_trucks_long != None:
+    #     # T12_turnout_direction1 = str(T12_turnout_direction)
+    #     print "no_trucks_long",no_trucks_long
+    #     update_no_trucks_long_comment(no_trucks_long, T3_turnout)
+    #     set_no_trucks("long", no_trucks_long)
+    # else:
+    #     delete_no_trucks_long_comment(T3_turnout)
 
     no_trucks_short = no_trucks_short_cb.getSelectedItem()
-    if no_trucks_short != None:
-        print "no_trucks_short", no_trucks_short
-        # T3_turnout_direction = turnouts.getTurnout(str(T3_turnout_name))
-        update_no_trucks_short_comment(no_trucks_short, T12_turnout)
-    else:
-        delete_no_trucks_short_comment(T12_turnout)
+    set_no_trucks("short", no_trucks_short)
+    # if no_trucks_short != None:
+    #     print "no_trucks_short", no_trucks_short
+    #     # T3_turnout_direction = turnouts.getTurnout(str(T3_turnout_name))
+    #     update_no_trucks_short_comment(no_trucks_short, T12_turnout)
+    #     set_no_trucks("short", no_trucks_short)
+    # else:
+    #     delete_no_trucks_short_comment(T12_turnout)
+
+    no_trucks_total = no_trucks_total_cb.getSelectedItem()
+    set_no_trucks("total", no_trucks_total)
 
     #**********************************************************************
 
@@ -719,8 +742,9 @@ def set_sensors_in_sidings(msg):
             print("x22")
             ntrucksstr = "%no_trucks_"+msg1+"^^%"
             print("x3", ntrucksstr)
-            no_trucks = get_no_trucks(ntrucksstr)
-            print "x4", no_trucks
+            # no_trucks = get_no_trucks(ntrucksstr)
+            no_trucks = get_no_trucks(msg1)
+            print "*******************************************x4", no_trucks
             if no_trucks != None:
                 print "no_trucks not none", no_trucks
                 print no_trucksComboBox[i].getSelectedItem()

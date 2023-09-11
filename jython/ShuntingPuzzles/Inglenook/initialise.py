@@ -99,7 +99,44 @@ class Initialise:
             pygame.display.update()
             print "displayed update"
 
+    def move_to_initial_position(self):
 
+
+        no_trucks = self.get_no_trucks()
+
+        # assume trucks have been backed up to siding_long
+
+        # note position
+        positions_of_trucks = self.set_positions_of_trucks()
+
+        # need to distribute them
+        [no_trucks_short, no_trucks_long, no_trucks_total] = self.get_no_trucks()
+        [turnout_short, turnout_long, turnout_main] = self.get_sidings()
+        [turnout_short_direction, turnout_long_direction, turnout_main_direction] = self.get_turnout_directions()
+
+        # put no_trucks_long on siding_long
+
+        no_trucks_to_move = no_trucks_long
+        destBranch = 1      # siding_long
+        fromBranch = 4      # sput
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
+        # put rest of trucks on siding 2
+
+        no_trucks_to_move = 0
+        destBranch = 4      # sput
+        fromBranch = 1      # siding_long
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
+        # put rest on siding_short
+
+        no_trucks_to_move = no_trucks_total - no_trucks_long
+        destBranch = 4      # sput
+        fromBranch = 1      # siding_long
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
 # move engine to spur
 
 

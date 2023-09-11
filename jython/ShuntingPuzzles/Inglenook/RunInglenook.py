@@ -577,7 +577,7 @@ class RunInglenookMaster():
         sensors.getSensor("simulateErrorsInglenookSensor").setKnownState(INACTIVE)
         sensors.getSensor("simulateInglenookSensor").setKnownState(INACTIVE)
         sensors.getSensor("simulateErrorsInglenookSensor").setKnownState(INACTIVE)
-        sensors.getSensor("runRealTrainInglenookDistributionSensor").setKnownState(INACTIVE)
+        sensors.getSensor("runRealTrainDistributionInglenookSensor").setKnownState(INACTIVE)
 
 
 

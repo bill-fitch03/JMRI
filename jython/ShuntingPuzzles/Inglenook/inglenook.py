@@ -6,7 +6,7 @@ import random
 from collections import deque
 #from timeout import alternativeaction, variableTimeout, print_name, timeout
 
-class Inglenook:
+class Inglenook():
 
     pegs = [deque([]),deque([]),deque([]),deque([]),deque([]),deque([]),deque([])]
     # pegs0 = pegs[0]
@@ -18,12 +18,54 @@ class Inglenook:
     positions =[]
 
     spur_branch = 4
+    mid_branch = 5
 
     def __init__(self, pegs, size_long_siding, size_short_sidings):
         self.pegs = pegs
         self.size_long_siding = size_long_siding
         self.size_short_sidings = size_short_sidings
         print "self.size_long_siding", self.size_long_siding
+
+    def distribute_trucks(self):
+
+        print "distribute_trucks"
+        no_trucks = self.get_no_trucks()
+
+        # assume trucks have been backed up to siding_long
+
+        # note position
+
+
+        # need to distribute them
+        [no_trucks_short, no_trucks_long, no_trucks_total] = self.get_no_trucks()
+        print "distribute_trucks2"
+        # [turnout_short, turnout_long, turnout_main] = self.get_sidings()
+        # [turnout_short_direction, turnout_long_direction, turnout_main_direction] = self.get_turnout_directions()
+
+        # put no_trucks_long on siding_long
+
+        no_trucks_to_move = no_trucks_long
+        destBranch = 1      # siding_long
+        fromBranch = 5      # mid
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+        print "distribute_trucks3"
+        # put rest of trucks on siding 2
+
+        no_trucks_to_move = 0
+        destBranch = 4      # sput
+        fromBranch = 1      # siding_long
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
+        # put rest on siding_short
+
+        no_trucks_to_move = no_trucks_total - no_trucks_long
+        destBranch = 4      # sput
+        fromBranch = 1      # siding_long
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
 
     def solvePuzzle(self):
         destSiding = 1
@@ -390,7 +432,7 @@ class Inglenook:
         # destBranch = 2
         # noTrucks = 3
         # take from fromBranch, put on 4
-        if fromBranch != self.spur_branch:
+        if fromBranch < self.spur_branch or destBranch == 4:   #if not at spur, move to spur
             for i in range(0, noTrucks):
                 msg = "move Truck to spur: " + str(i)
                 yield ["display_message", msg]
@@ -399,11 +441,14 @@ class Inglenook:
                 # print ("self.pegs",self.pegs)
                 self.pegs[self.spur_branch-1].append(self.pegs[fromBranch-1].pop())
             yield self.pegs
-        if destBranch != 4:
+        if destBranch != 4:    # if we want to go to a siding, go there
             for i in range(0, noTrucks):
                 msg = "move Truck to branch: " + str(destBranch)
                 yield ["display_message", msg]
-                self.pegs[destBranch-1].append(self.pegs[self.spur_branch-1].pop())
+                if fromBranch == self.mid_branch:
+                    self.pegs[destBranch-1].append(self.pegs[self.mid_branch-1].pop())   #only use for distribution
+                else:
+                    self.pegs[destBranch-1].append(self.pegs[self.spur_branch-1].pop())
             yield self.pegs
         #print (self.pegs)
         print("leave moveTrucksCreatingYieldStatements", noTrucks, fromBranch, destBranch)
@@ -519,6 +564,21 @@ class Inglenook:
         # print (self.pegs)
         # print( self.pegs[branchNo - 1].count(truckNo)>0)
         return self.pegs[branchNo - 1].count(truckNo)>0
+
+    def get_no_trucks(self):
+
+        no_trucks_short = self.get_no_trucks1("short")
+        no_trucks_long = self.get_no_trucks1("long")
+        no_trucks_total = self.get_no_trucks1("total")
+
+        return [no_trucks_short, no_trucks_long, no_trucks_total]
+
+    def get_no_trucks1(self, no_trucks_str):
+        #no_trucks is of the form short, long, total
+        memories1 = jmri.InstanceManager.getDefault(jmri.MemoryManager)
+        no_trucks = memories1.getMemory('IMIS:no_trucks_' + no_trucks_str)
+        print "$$$$$$$$$$$$$$$$", no_trucks, 'IMIS:no_trucks_' + no_trucks_str
+        return int(no_trucks.getValue())
 
 
 

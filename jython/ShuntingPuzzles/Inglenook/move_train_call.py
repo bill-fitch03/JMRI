@@ -9,34 +9,99 @@ from threading import Thread
 import globals
 
 
-@print_name()
-def decide_what_to_do_first(self, active_sensor):
-    print "calling decide_what_to_do_first in move_train_call"
-    self.indent()
-    # set up the trucks 5 in branch 3 and 3 in branch 2, and return to branch 4
-    # self.noTrucksOnTrain = 0
-    if active_sensor != sensors.getSensor("runRealTrainDistributionInglenookSensor"):
-        self.myprint("decide_what_to_do_first *")
-
-        self.noTrucksOnTrain = 0
-        self.previousBranch = self.spur_branch
-        self.noTrucksToMoveFromPreviousStep = 0
-        self.numberTrucksToMove_previous = 0
-
-        self.myprint("self.noTrucksOnTrain:" + str(self.noTrucksOnTrain))
-        self.myprint("self.previousBranch:" + str(self.previousBranch))
-    else:
-        positions_of_trucks = self.set_positions_of_trucks()
-
-        self.move_to_initial_position()
-
-    # instruction_first = [generate_first_instructions]
-    # self.noTrucksOnTrain = self.decide_what_to_do(instruction_first,self.noTrucksOnTrain)
-    self.myprint("end decide_what_to_do_first")
-    self.dedent()
+# @print_name()
+# def decide_what_to_do_first(self, active_sensor):
+#     print "calling decide_what_to_do_first in move_train_call"
+#     self.indent()
+#     # set up the trucks 5 in branch 3 and 3 in branch 2, and return to branch 4
+#     # self.noTrucksOnTrain = 0
+#     if active_sensor != sensors.getSensor("runRealTrainDistributionInglenookSensor"):
+#         self.myprint("decide_what_to_do_first *")
+#
+#         self.noTrucksOnTrain = 0
+#         self.previousBranch = self.spur_branch
+#         self.noTrucksToMoveFromPreviousStep = 0
+#         self.numberTrucksToMove_previous = 0
+#
+#         self.myprint("self.noTrucksOnTrain:" + str(self.noTrucksOnTrain))
+#         self.myprint("self.previousBranch:" + str(self.previousBranch))
+#     else:
+#
+#         # we assume the train is coming from the mainline
+#         self.myprint("decide_what_to_do_first *")
+#
+#         self.noTrucksOnTrain = 0
+#         self.previousBranch = self.spur_branch     # should be mainline branch but we havn't got one
+#         self.noTrucksToMoveFromPreviousStep = 0
+#         self.numberTrucksToMove_previous = 0
+#
+#         self.myprint("self.noTrucksOnTrain:" + str(self.noTrucksOnTrain))
+#         self.myprint("self.previousBranch:" + str(self.previousBranch))
+#
+#
+#
+#
+#
+#         #positions_of_trucks = self.set_positions_of_trucks()
+#
+#         #self.move_to_initial_position()
+#
+#     # instruction_first = [generate_first_instructions]
+#     # self.noTrucksOnTrain = self.decide_what_to_do(instruction_first,self.noTrucksOnTrain)
+#     self.myprint("end decide_what_to_do_first")
+#     self.dedent()
 
 
 def move_to_initial_position(self):
+
+
+    self.no_trucks = self.get_no_trucks()
+
+    # assume trucks have been backed up to siding_long
+
+    # note position
+    positions_of_trucks = self.set_positions_of_trucks()
+
+    msg = "positions of trucks set"
+    yield ["display_message", msg]
+
+    # need to distribute them
+    [no_trucks_short, no_trucks_long, no_trucks_total] = self.get_no_trucks()
+    [turnout_short, turnout_long, turnout_main] = self.get_sidings()
+    [turnout_short_direction, turnout_long_direction, turnout_main_direction] = self.get_turnout_directions()
+
+    # put no_trucks_long on siding_long
+
+    no_trucks_to_move = no_trucks_long
+    destBranch = 1      # siding_long
+    fromBranch = 4      # sput
+
+    msg = "moving from " + str(fromBranch) + " to " + str("destBranch")
+    yield ["display_message", msg]
+
+    for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
+    # put rest of trucks on siding 2
+
+    no_trucks_to_move = no_trucks_total - no_trucks_long
+    destBranch = 2      # sput
+    fromBranch = 1      # siding_long
+
+    msg = "moving from " + str(fromBranch) + " to " + str("destBranch")
+    yield ["display_message", msg]
+
+    for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
+    # put rest on siding_short
+
+    no_trucks_to_move = 0
+    destBranch = 4      # sput
+    fromBranch = 2     # siding_long
+
+    msg = "moving from " + str(fromBranch) + " to " + str("destBranch")
+    yield ["display_message", msg]
+
+    for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
 
 
 # @print_name()
