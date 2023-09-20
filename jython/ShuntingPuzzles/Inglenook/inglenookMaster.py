@@ -61,6 +61,7 @@ class InglenookMaster(jmri.jmrit.automat.AbstractAutomaton):
 
         self.act_on_sensors(sensor_that_went_active, size_long_siding, size_short_sidings)
         print "qwertyu **************************"
+        print "sensor_that_went_active", sensor_that_went_active
         sensor_that_went_active.setKnownState(INACTIVE)
 
 

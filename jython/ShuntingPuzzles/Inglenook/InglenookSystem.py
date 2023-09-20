@@ -157,21 +157,21 @@ def get_siding_block(siding):
     return None
 
 # @print_name()
-def get_siding_turnout(siding):
-    print "q"
-    s = siding.split("#")[1]
-    print "siding", siding
-    for turnout in turnouts.getNamedBeanSet():
-        comment = turnout.getComment()
-        if comment != None:
-            #print "comment" , comment
-            if "#" in comment:
-                #print "comment" , comment
-                #print "s", s, "comment.split('#')[0]", str(comment.split('#')[1]), "sensor", sensor, sensor.getUserName()
-                if s == str(comment.split('#')[1]):
-                    return turnout.getUserName()
-                print "s",s,"x", str(comment.split('#')[1])
-    return None
+# def get_siding_turnout(siding):
+#     print "q"
+#     s = siding.split("#")[1]
+#     print "siding", siding
+#     for turnout in turnouts.getNamedBeanSet():
+#         comment = turnout.getComment()
+#         if comment != None:
+#             #print "comment" , comment
+#             if "#" in comment:
+#                 #print "comment" , comment
+#                 #print "s", s, "comment.split('#')[0]", str(comment.split('#')[1]), "sensor", sensor, sensor.getUserName()
+#                 if s == str(comment.split('#')[1]):
+#                     return turnout.getUserName()
+#                 print "s",s,"x", str(comment.split('#')[1])
+#     return None
 
 # def get_no_trucks(noTrucks):
 #     #noTrucks is of the form %no_trucks_long^5^% or %no_trucks_short^5^%
@@ -204,6 +204,28 @@ def get_siding_turnout(siding):
 #     print "end get_no_trucks"
 #     return None
 
+def get_engine_facing():
+    engine_facing = memories.getMemory('IMIS:engine_facing')
+    if engine_facing != None:
+        print "$$$$$$$$$$$$$$$$", engine_facing, 'IMIS:engine_facing'
+        return engine_facing.getValue()
+    else:
+        return None
+
+def set_engine_facing(direction):
+    memory = memories.provideMemory('IS:engine_facing')
+    memory.setValue(direction)
+
+def get_turnout(turnout_str):
+    print "get_to: qwerty", 'IMIS:the_turnout_' + turnout_str
+    turnout = memories.getMemory('IMIS:the_turnout_' + turnout_str)
+    if turnout != None:
+        print "$$$$$$$$$$$$$$$$", turnout, 'IMIS:the_turnout_' +turnout_str
+        print "value", turnout.getValue()
+        return turnout.getValue()
+    else:
+        return None
+
 def get_no_trucks(no_trucks_str):
     #no_trucks is of the form short, long, total
     no_trucks = memories.getMemory('IMIS:no_trucks_' + no_trucks_str)
@@ -217,8 +239,106 @@ def set_no_trucks(no_trucks_str, no_trucks):
     memory = memories.provideMemory('IS:no_trucks_' + no_trucks_str)
     memory.setValue(no_trucks)
 
+# def get_turnout(turnout_str):
+#     # call using get_turnout("to_1_&_2")
+#     fred = memories.getMemory("IMIS:turnout_to_long")
+#     print "fred", fred
+#     fred = memories.getMemory("IMIS:no_trucks_total")
+#     print "fred", fred
+#     fred = get_no_trucks("total")
+#     print "fred", fred
+#     no_trucks_str = "total"
+#     no_trucks = memories.getMemory('IMIS:no_trucks_' + no_trucks_str)
+#     print "no_trucks", no_trucks
+#     print "get_turnout:a1"
+#     try:
+#         turnout_str2 = 'IMIS:turnout_' + turnout_str
+#         print "turnout_str2", turnout_str2
+#         turnout = memories.getMemory(turnout_str2)
+#         print "get_turnout:a2: turnout ", turnout
+#         turnoutx = memories.getMemory(turnout_str2)
+#         print "get_turnout:a2: turnoutx ", turnoutx
+#
+#         if turnout != None:
+#             print "$$$$$$$$$$$$$$$$", turnout, 'IMIS:turnout_' + turnout_str
+#             turnout_str = turnout.getValue()
+#             turnout = turnouts.get_to(turnout_str)
+#             return turnout
+#         else:
+#             return None
+#     except:
+#         return None
+# def get_turnout(turnout_str):
+#     # call using get_turnout("to_1_&_2")
+#     fred = memories.getMemory("IMIS:turnout_to_long")
+#     print "fred", fred
+#     fred = memories.getMemory("IMIS:no_trucks_total")
+#     print "fred", fred
+#     fred = get_no_trucks("total")
+#     print "fred", fred
+#     no_trucks_str = "total"
+#     no_trucks = memories.getMemory('IMIS:no_trucks_' + no_trucks_str)
+#     print "no_trucks", no_trucks
+#     print "get_turnout:a1"
+#     try:
+#         turnout_str2 = 'IMIS:turnout_' + turnout_str
+#         print "turnout_str2", turnout_str2
+#         turnout = memories.getMemory(turnout_str2)
+#         print "get_turnout:a2: turnout ", turnout
+#         turnoutx = memories.getMemory(turnout_str2)
+#         print "get_turnout:a2: turnoutx ", turnoutx
+#
+#         if turnout != None:
+#             print "$$$$$$$$$$$$$$$$", turnout, 'IMIS:turnout_' + turnout_str
+#             turnout_str = turnout.getValue()
+#             turnout = turnouts.get_turnout(turnout_str)
+#             return turnout
+#         else:
+#             return None
+#     except:
+#         return None
 
-def get_turnout_direction(turnoutName):
+def set_turnout(turnout_str, turnout):
+    if turnout != None:
+        print "turnout", turnout
+        # turnout_st = str(turnout.getUserName())
+        # call using set_turnout("to_2", "SP_T04")
+        memory = memories.provideMemory('IS:the_turnout_' + turnout_str)
+        memory.setValue(turnout)
+
+def get_turnout_direction(turnout_str):
+    turnout_dir = memories.getMemory('IMIS:turnout_dir_' + turnout_str)
+    if turnout_dir != None:
+        print "$$$$$$$$$$$$$$$$", turnout_dir, 'IMIS:turnout_dir_' + turnout_str
+        return turnout_dir.getValue()
+    else:
+        return None
+
+def set_turnout_direction(turnout_str, turnout_dir):
+    # call using set_turnout_direction("to_1", "Thrown")
+    memory = memories.provideMemory('IS:turnout_dir_' + turnout_str)
+    memory.setValue(turnout_dir)
+
+def get_turnout_directions():
+
+    [turnout_short_dir, turnout_long_dir, turnout_main_dir] = self.get_turnout_dir_str()
+
+    turnout_short_direction = get_turnout_direction(turnout_short_dir)
+    turnout_long_direction = get_turnout_direction(turnout_long_dir)
+    turnout_main_direction = get_turnout_direction(turnout_main_dir)
+
+    return [turnout_short_direction, turnout_long_direction, turnout_main_direction]
+
+def get_turnout_str():
+
+    turnout_str = ["to_long_siding", "to_short_sidings", "to_main"]
+    return turnout_str
+def get_turnout_dir_str():
+
+    turnout_dir_str = ["to_long", "to_2", "to_main"]
+    return turnout_dir_str
+
+def get_turnout_direction_old(turnoutName):
 
     print "x"
     turnout = turnouts.getTurnout(turnoutName)
@@ -413,7 +533,7 @@ def update_comment(siding_name, siding_sensor):
 
 def OK_action(event):
 
-    global sensorComboBox, blockComboBox, turnoutComboBox, turnoutComboBox2, no_trucksComboBox
+    global sensorComboBox, blockComboBox, turnoutComboBox, turnoutDirectionCombobox, engineDirectionComboBox, no_trucksComboBox
     [spur_cb, sensor1_cb, sensor2_cb, sensor3_cb]= sensorComboBox
 
     spur_sensor_name = spur_cb.getSelectedItem()
@@ -485,56 +605,42 @@ def OK_action(event):
         delete_block_comment("#IS_block_siding3#")
 
     #**********************************************************************
-    [T12_turnout_cb, T3_turnout_cb, main_turnout_cb]= turnoutComboBox
 
-    T12_turnout_name = T12_turnout_cb.getSelectedItem()
-    if T12_turnout_name != None:
-        T12_turnout = turnouts.getTurnout(str(T12_turnout_name))
-        update_turnout_comment("#IS_turnout_12#", T12_turnout)
-    else:
-        delete_turnout_comment("#IS_turnout_12#")
+    [long_turnout_cb, short_turnout_cb, main_turnout_cb]= turnoutComboBox
+    [turnout_long_str, turnout_short_str,   turnout_main_str] = get_turnout_str()
 
-    T3_turnout_name = T3_turnout_cb.getSelectedItem()
-    if T3_turnout_name != None:
-        T3_turnout = turnouts.getTurnout(str(T3_turnout_name))
-        update_turnout_comment("#IS_turnout_3#", T3_turnout)
-    else:
-        delete_turnout_comment("#IS_turnout_3#")
+    turnout_name = str(long_turnout_cb.getSelectedItem())
+    if turnout_name != None:
+        print "long turnout_name", turnout_name
+        set_turnout(turnout_long_str, turnout_name)
 
-    main_turnout_name = main_turnout_cb.getSelectedItem()
-    if main_turnout_name != None:
-        main_turnout = turnouts.getTurnout(str(main_turnout_name))
-        update_turnout_comment("#IS_turnout_main#", main_turnout)
-    else:
-        delete_turnout_comment("#IS_turnout_Tmain#")
+    turnout_name = short_turnout_cb.getSelectedItem()
+    if turnout_name != None:
+        print "short turnout_name", turnout_name
+        set_turnout(turnout_short_str, turnout_name)
+
+    turnout_name = main_turnout_cb.getSelectedItem()
+    if turnout_name != None:
+        print "main turnout_name", turnout_name
+        set_turnout(turnout_main_str, turnout_name)
 
     #**********************************************************************
 
-    [T12_turnout_direction_cb, T3_turnout_direction_cb, main_turnout_direction_cb]= turnoutComboBox2
+    [long_turnout_direction_cb, short_turnout_direction_cb, main_turnout_direction_cb]= turnoutDirectionCombobox
+    [dir_long_str, dir_short_str, dir_main_str] = get_turnout_dir_str()
+    long_turnout_direction = long_turnout_direction_cb.getSelectedItem()
+    set_turnout_direction(dir_long_str, long_turnout_direction)
 
-    T12_turnout_direction = T12_turnout_direction_cb.getSelectedItem()
-    if T12_turnout_direction != None:
-        # T12_turnout_direction1 = str(T12_turnout_direction)
-        print "T12_turnout_direction",T12_turnout_direction
-        update_turnout_direction_comment(T12_turnout_direction, T12_turnout)
-    else:
-        delete_turnout_direction_comment(T12_turnout)
-
-    T3_turnout_direction = T3_turnout_direction_cb.getSelectedItem()
-    if T3_turnout_direction != None:
-        print "T3_turnout_direction", T3_turnout_direction
-        # T3_turnout_direction = turnouts.getTurnout(str(T3_turnout_name))
-        update_turnout_direction_comment(T3_turnout_direction, T3_turnout)
-    else:
-        delete_turnout_comment(T3_turnout)
+    short_turnout_direction = short_turnout_direction_cb.getSelectedItem()
+    set_turnout_direction(dir_short_str, short_turnout_direction)
 
     main_turnout_direction = main_turnout_direction_cb.getSelectedItem()
-    if main_turnout_direction != None:
-        print "Tmain_turnout_direction", main_turnout_direction
-        # Tmain_turnout_direction = turnouts.getTurnout(str(Tmain_turnout_name))
-        update_turnout_direction_comment(main_turnout_direction, main_turnout)
-    else:
-        delete_turnout_comment(Tmain_turnout)
+    set_turnout_direction(dir_main_str, main_turnout_direction)
+
+    #**********************************************************************
+
+    engine_direction = engineDirectionComboBox.getSelectedItem()
+    set_engine_facing(engine_direction)
 
     #**********************************************************************
 
@@ -542,24 +648,9 @@ def OK_action(event):
 
     no_trucks_long = no_trucks_long_cb.getSelectedItem()
     set_no_trucks("long", no_trucks_long)
-    # T12_turnout_direction = T12_turnout_direction_cb.getSelectedItem()
-    # if no_trucks_long != None:
-    #     # T12_turnout_direction1 = str(T12_turnout_direction)
-    #     print "no_trucks_long",no_trucks_long
-    #     update_no_trucks_long_comment(no_trucks_long, T3_turnout)
-    #     set_no_trucks("long", no_trucks_long)
-    # else:
-    #     delete_no_trucks_long_comment(T3_turnout)
 
     no_trucks_short = no_trucks_short_cb.getSelectedItem()
     set_no_trucks("short", no_trucks_short)
-    # if no_trucks_short != None:
-    #     print "no_trucks_short", no_trucks_short
-    #     # T3_turnout_direction = turnouts.getTurnout(str(T3_turnout_name))
-    #     update_no_trucks_short_comment(no_trucks_short, T12_turnout)
-    #     set_no_trucks("short", no_trucks_short)
-    # else:
-    #     delete_no_trucks_short_comment(T12_turnout)
 
     no_trucks_total = no_trucks_total_cb.getSelectedItem()
     set_no_trucks("total", no_trucks_total)
@@ -569,8 +660,9 @@ def OK_action(event):
     comp = event.getSource()
     win = SwingUtilities.getWindowAncestor(comp)
     win.dispose()
+    
 def Cancel_action(event):
-    global sensorComboBox, blockComboBox, turnoutComboBox, turnoutComboBox2, no_trucksComboBox
+    global sensorComboBox, blockComboBox, turnoutComboBox, turnoutDirectionCombobox, engineDirectionComboBox, no_trucksComboBox
     sensor = sensors.getSensor("CB11")
     sensorComboBox[0].setSelectedItem(sensor)
     item = sensorComboBox[0].getSelectedItem()
@@ -580,7 +672,7 @@ def Cancel_action(event):
     win.dispose()
 
 def set_sensors_in_sidings(msg):
-    global sensorComboBox, blockComboBox, turnoutComboBox, turnoutComboBox2, no_trucksComboBox
+    global sensorComboBox, blockComboBox, turnoutComboBox, turnoutDirectionCombobox, engineDirectionComboBox, no_trucksComboBox
     global dialog
     print "a"
     dialog = JDialog(None, 'Set sensors in sidings', False)
@@ -595,10 +687,10 @@ def set_sensors_in_sidings(msg):
     sensorComboBox=[]
     rowTitle_22=[]
     for i in range(4):
-        if i == 0:
-            msg = "spur      "
+        if i == 3:
+            msg = "head shunt      "
         else:
-            msg = "siding   " + str(i)
+            msg = "siding " + str(i+1)+ "   "
         print "hi"
         sensorComboBox.append(jmri.swing.NamedBeanComboBox(sensors))
         sensorComboBox[i].setAllowNull(True)
@@ -613,8 +705,8 @@ def set_sensors_in_sidings(msg):
         jmri.util.swing.JComboBoxUtil.setupComboBoxMaxRows(sensorComboBox[i])
         rowTitle_22.append(JPanel())
         rowTitle_22[i].add(Box.createVerticalGlue())
-        if i == 3:
-            msg = "long sid " + str(i)
+        if i == 0:
+            msg = "long sid 1"
         rowTitle_22[i].add(JTextArea(msg))
         rowTitle_22[i].add(Box.createRigidArea(Dimension(20, 0)))
         rowTitle_22[i].add(Box.createHorizontalGlue())
@@ -628,12 +720,13 @@ def set_sensors_in_sidings(msg):
     blockComboBox=[]
     rowTitle_23=[]
     for i in range(5):
-        if i == 0:
-            msg = "spur      "
-        elif i == 1:
-            msg = "mid       "
+        print "blockComboBox", i
+        if i == 4:
+            msg = "head shunt    "
+        elif i == 3:
+            msg = "mid           "
         else:
-            msg = "siding   " + str(i-1)
+            msg = "siding " + str(i+1) + "   "
         blockComboBox.append(jmri.swing.NamedBeanComboBox(jmri.InstanceManager.getNullableDefault(jmri.BlockManager)))
         blockComboBox[i].setAllowNull(True)
         blockComboBox[i].setPreferredSize(Dimension(300, 20));
@@ -646,8 +739,8 @@ def set_sensors_in_sidings(msg):
         jmri.util.swing.JComboBoxUtil.setupComboBoxMaxRows(blockComboBox[i])
         rowTitle_23.append(JPanel())
         rowTitle_23[i].add(Box.createVerticalGlue())
-        if i == 4:
-            msg = "long sid " + str(i-1)
+        if i == 0:
+            msg = "long sid 1"
         rowTitle_23[i].add(JTextArea(msg))
         rowTitle_23[i].add(Box.createRigidArea(Dimension(20, 0)))
         rowTitle_23[i].add(Box.createHorizontalGlue())
@@ -660,34 +753,45 @@ def set_sensors_in_sidings(msg):
     bean = None
     n = jmri.NamedBean.DisplayOptions.DISPLAYNAME
     turnoutComboBox=[]
-    turnoutComboBox2 = []
+    turnoutDirectionCombobox = []
     rowTitle_24=[]
+    [turnout_long_str, turnout_short_str, turnout_main_str] = get_turnout_str()
+    [dir_long_str, dir_short_str, dir_main_str] = get_turnout_dir_str()
     for i in range(3):
+        print "turnoutComboBox", i
         if i == 0:
-            msg = "turnout to 1 & 2"
+            msg = "to long siding    "
+            msg_turnout = turnout_long_str
+            msg_turnout_direction = dir_long_str
         elif i == 1:
-            msg = "turnout to 3    "
+            msg = "to short sidings"
+            msg_turnout = turnout_short_str
+            msg_turnout_direction = dir_short_str
         elif i == 2:
             msg = "turnout to main "
+            msg_turnout = turnout_main_str
+            msg_turnout_direction = dir_main_str
+        print "a"
         turnoutComboBox.append(jmri.swing.NamedBeanComboBox(turnouts))
-        turnoutComboBox[i].setAllowNull(True)
-        turnoutComboBox2.append(JComboBox(("Thrown", "Closed")))
-        siding = "#IS_"+msg.replace(" ","").replace("to","_").replace("&","")+"#"
-        turnoutName = get_siding_turnout(siding)
-        print "turnoutName", i, turnoutName
-        turnoutDirection = None
-        if turnoutName != None:
-            turnout = turnouts.getTurnout(turnoutName)
-            turnoutComboBox[i].setSelectedItem(turnout)
-            # item = turnoutComboBox[i].getSelectedItem()
-            turnoutDirection = get_turnout_direction(turnoutName)
-        print "a2"
-        print "turnoutDirection", turnoutDirection
-        print "a1"
-        if turnoutDirection != None:
-            turnoutComboBox2[i].setSelectedItem(turnoutDirection)
-            # item = turnoutComboBox2[i].getSelectedItem()
         print "b"
+        turnoutComboBox[i].setAllowNull(True)
+        turnoutDirectionCombobox.append(JComboBox(("Thrown", "Closed")))
+        print "c"
+        # siding = "#IS_"+msg.replace(" ","").replace("to","_").replace("&","")+"#"
+        print "msg_turnout", msg_turnout
+        turnout_name = get_turnout(msg_turnout)
+        if turnout_name != None:
+            print "turnoutName", i, turnout_name
+        turnoutDirection = None
+        if turnout_name != None:
+            print "settingSlectedItem" , turnout_name
+            turnout = turnouts.getTurnout(str(turnout_name))
+            print "settingSlectedItem" , turnout
+            turnoutComboBox[i].setSelectedItem(turnout)
+            print "item", turnoutComboBox[i].getSelectedItem()
+            turnoutDirection = get_turnout_direction(msg_turnout_direction)
+        if turnoutDirection != None:
+            turnoutDirectionCombobox[i].setSelectedItem(turnoutDirection)
         jmri.util.swing.JComboBoxUtil.setupComboBoxMaxRows(turnoutComboBox[i])
         rowTitle_24.append(JPanel())
         rowTitle_24[i].add(Box.createVerticalGlue())
@@ -698,29 +802,56 @@ def set_sensors_in_sidings(msg):
         rowTitle_24[i].add(Box.createRigidArea(Dimension(20, 0)))
         print "a"
         if i == 0:
-            msg = "to 1:   "
+            msg = "to 1:       "
         elif i == 1:
-            msg = "to 3:   "
+            msg = "to 2:       "
         else:
             msg = "to main:"
         rowTitle_24[i].add(JTextArea(msg))
         # rowTitle_24[i].add(Box.createHorizontalGlue())
-        rowTitle_24[i].add(turnoutComboBox2[i])
+        rowTitle_24[i].add(turnoutDirectionCombobox[i])
         panel.add(leftJustify(rowTitle_24[i]))
+
+    l3 = JLabel("   " + "Set the Engine Direction")
+    l3.setFont(l.getFont().deriveFont(Font.BOLD, 13))
+    panel.add(leftJustify(l3))
+
+    rowTitle_27=[]
+    engineDirectionComboBox=JComboBox(("Towards Sidings", "Towards Head Shunt"))
+    msg = "engine facing: "
+
+    rowTitle_27.append(JPanel())
+    rowTitle_27[0].add(Box.createVerticalGlue())
+    rowTitle_27[0].add(JTextArea(msg))
+    rowTitle_27[0].add(Box.createRigidArea(Dimension(20, 0)))
+    rowTitle_27[0].add(Box.createHorizontalGlue())
+    rowTitle_27[0].add(engineDirectionComboBox)
+    panel.add(leftJustify(rowTitle_27[0]))
+    engine_facing = get_engine_facing()
+    print "*******************************************x4", engine_facing
+    if engine_facing != None:
+        print "engine_facing", engine_facing
+        print engineDirectionComboBox.getSelectedItem()
+        engineDirectionComboBox.setSelectedItem(str(engine_facing))
+    print "x"
+
+    l4 = JLabel("   " + "Set the Numbers of Trucks")
+    l4.setFont(l.getFont().deriveFont(Font.BOLD, 13))
+    panel.add(leftJustify(l4))
 
     no_trucksComboBox=[]
     rowTitle_25=[]
     for i in range(3):
         print "x"
         if i == 0:
-            msg = "Max trucks long siding "
-            msg1 = "long"
+            msg = "Max trucks long siding  "
+            msg_turnout_direction = "long"
         elif i == 1:
             msg = "Max trucks short siding"
-            msg1 = "short"
+            msg_turnout_direction = "short"
         else:
-            msg = "No of trucks to sort:  "
-            msg1= "total"
+            msg = "No of trucks to sort:      "
+            msg_turnout_direction= "total"
         print "x1"
         if i == 0:
             no_trucksComboBox.append(JComboBox(("5", "4", "3")))
@@ -740,10 +871,10 @@ def set_sensors_in_sidings(msg):
         else:
             print "x211", i
             print("x22")
-            ntrucksstr = "%no_trucks_"+msg1+"^^%"
+            ntrucksstr = "%no_trucks_"+msg_turnout_direction+"^^%"
             print("x3", ntrucksstr)
             # no_trucks = get_no_trucks(ntrucksstr)
-            no_trucks = get_no_trucks(msg1)
+            no_trucks = get_no_trucks(msg_turnout_direction)
             print "*******************************************x4", no_trucks
             if no_trucks != None:
                 print "no_trucks not none", no_trucks
@@ -753,24 +884,6 @@ def set_sensors_in_sidings(msg):
 
                 print "set selected item", i, no_trucksComboBox[i].getSelectedItem()
             print "x"
-        # jmri.util.swing.JComboBoxUtil.setupComboBoxMaxRows(no_trucksComboBox[i])
-
-        # turnoutComboBox2.append(JComboBox(("5", "4", "3")))
-        # siding = "#IS_"+msg.replace(" ","").replace("to","_").replace("&","")+"#"
-        # turnoutName = get_siding_turnout(siding)
-        # print "turnoutName", i, turnoutName
-        # turnoutDirection = None
-        # if turnoutName != None:
-        #     turnout = turnouts.getTurnout(turnoutName)
-        #     turnoutComboBox[i].setSelectedItem(turnout)
-        #     # item = turnoutComboBox[i].getSelectedItem()
-        #     turnoutDirection = get_turnout_direction(turnoutName)
-        # print "a2"
-        # print "turnoutDirection", turnoutDirection
-        # print "a1"
-        # if turnoutDirection != None:
-        #     turnoutComboBox2[i].setSelectedItem(turnoutDirection)
-
 
         rowTitle_25.append(JPanel())
         rowTitle_25[i].add(Box.createVerticalGlue())

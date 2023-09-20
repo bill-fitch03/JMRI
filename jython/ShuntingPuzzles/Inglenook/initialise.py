@@ -1,5 +1,5 @@
 import jmri
-from InglenookSystem import get_no_trucks, get_siding_turnout, get_turnout_direction
+from InglenookSystem import get_no_trucks, get_turnout_direction
 import inglenookMaster
 from move_train import Move_train2
 from collections import deque
@@ -35,32 +35,36 @@ class Initialise:
 
     def get_sidings(self):
 
-        msg = "turnout to 1 & 2"
-        siding = "#IS_"+msg.replace(" ","").replace("to","_").replace("&","")+"#"
-        turnout_short = get_siding_turnout(siding)
+        [turnout_short, turnout_long, turnout_main] = ["turnout_short", "turnout_long", "turnout_main"]
 
-        msg = "turnout to 3    "
-        siding = "#IS_"+msg.replace(" ","").replace("to","_").replace("&","")+"#"
-        turnout_long = get_siding_turnout(siding)
-
-        msg = "turnout to main "
-        siding = "#IS_"+msg.replace(" ","").replace("to","_").replace("&","")+"#"
-        turnout_main = get_siding_turnout(siding)
+        # msg = "turnout to 1 & 2"
+        # siding = "#IS_"+msg.replace(" ","").replace("to","_").replace("&","")+"#"
+        # turnout_short = get_siding_turnout(siding)
+        #
+        # msg = "turnout to 3    "
+        # siding = "#IS_"+msg.replace(" ","").replace("to","_").replace("&","")+"#"
+        # turnout_long = get_siding_turnout(siding)
+        #
+        # msg = "turnout to main "
+        # siding = "#IS_"+msg.replace(" ","").replace("to","_").replace("&","")+"#"
+        # turnout_main = get_siding_turnout(siding)
 
         return [turnout_short, turnout_long, turnout_main]
 
     def get_turnout_directions(self):
 
-        [turnout_short, turnout_long, turnout_main] = get_sidings()
+        [turnout_short_dir, turnout_long_dir, turnout_main_dir] = self.get_turnout_dir_str()
 
-        turnout_short_direction = get_turnout_direction(turnout_short)
-        turnout_long_direction = get_turnout_direction(turnout_short)
-        turnout_main_direction = get_turnout_direction(turnout_short)
+        turnout_short_direction = get_turnout_direction(turnout_short_dir)
+        turnout_long_direction = get_turnout_direction(turnout_long_dir)
+        turnout_main_direction = get_turnout_direction(turnout_main_dir)
 
         return [turnout_short_direction, turnout_long_direction, turnout_main_direction]
 
+    def get_turnout_dir_str(self):
 
-
+        turnout_dir_str = ["dir to long", "dir to 2", "dir to main"]
+        return turnout_dir_str
 
     # RunInglenookMaster()
     #

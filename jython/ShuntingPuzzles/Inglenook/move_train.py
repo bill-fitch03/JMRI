@@ -564,37 +564,48 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
         self.myprint("self.point3.getState() before" + str(self.point3.getState()))
         self.point3.setState(CLOSED)
         self.myprint("self.point3.getState() after" + str(self.point3.getState()))
-        if fromBranch == 4:
-            if toBranch == 1:
+
+        branch_long = 1
+        branch_short_2 = 2
+        branch_short_1 = 3
+        branch_spur = 4
+
+        # if fromBranch == 4:
+        #     if toBranch == 1:
+        if fromBranch == branch_spur:
+                if toBranch == branch_long:
                 self.myprint("get point1 CLOSED")
                 self.myprint("self.point1.getState() before" + str(self.point1.getState()))
                 # if self.point1.getState() != CLOSED:
                 # self.myprint("set point1 CLOSED")
-
-                self.point1.setState(CLOSED)
+                self.set_turnout_long("to_branch_long")
+                #self.point1.setState(CLOSED)
                 self.myprint("self.point1.getState() after" + str(self.point1.getState()))
             else:
                 self.myprint("get point1 THROWN")
                 self.myprint("self.point1.getState() before" + str(self.point1.getState()))
                 # if self.point1.getState() != THROWN:
                 # self.myprint("set point1 THROWN")
-                self.point1.setState(THROWN)
+                self.set_turnout_long("to_branches_short")
+                #self.point1.setState(THROWN)
                 self.myprint("self.point1.getState() after" + str(self.point1.getState()))
 
             self.set_delay_if_not_simulation(3000)
 
-            if toBranch == 3:
+            if toBranch == branch_short_1:
                 self.myprint("get point2 CLOSED")
                 # if self.point2.getState() != CLOSED:
                 # self.myprint("set point2 CLOSED")
-                self.point2.setState(CLOSED)
+                set_turnout_short("to_1")
+                #self.point2.setState(CLOSED)
                 self.set_delay_if_not_simulation(3000)
-            elif toBranch == 2:
+            elif toBranch == branch_short_2:
                 self.myprint("get point2 THROWN")
                 self.myprint("self.point2.getState() before" + str(self.point2.getState()))
                 # if self.point2.getState() != THROWN:
                 # self.myprint("set point2 THROWN")
-                self.point2.setState(THROWN)
+                set_turnout_short("to_2")
+                #self.point2.setState(THROWN)
                 self.myprint("self.point2.getState() after" + str(self.point2.getState()))
                 self.set_delay_if_not_simulation(3000)
             else:
@@ -602,38 +613,44 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
 
 
         else:
-            if fromBranch == 1:
+            # if fromBranch == 1:
+            if fromBranch == branch_long:
                 self.myprint("get point1 CLOSED")
                 self.myprint("self.point1.getState() before" + str(self.point1.getState()))
                 # if self.point1.getState() != CLOSED:
                 # self.myprint("set point1 CLOSED")
-                self.point1.setState(CLOSED)
+                self.set_turnout_long("to_branch_long")
+                # self.point1.setState(CLOSED)
                 self.myprint("self.point1.getState() after" + str(self.point1.getState()))
             else:
                 self.myprint("get point1 THROWN")
                 self.myprint("self.point1.getState() before" + str(self.point1.getState()))
                 # if self.point1.getState() != THROWN:
                 # self.myprint("set point1 THROWN")
-                self.point1.setState(THROWN)
+                self.set_turnout_long("to_branches_short")
+                # self.point1.setState(THROWN)
                 self.myprint("self.point1.getState() after" + str(self.point1.getState()))
 
             self.set_delay_if_not_simulation(3000)
 
-            if fromBranch == 3:
+            # if fromBranch == 3:
+            if fromBranch == branch_short_1:
                 self.myprint("get point2 CLOSED")
                 self.myprint("self.point2.getState() before" + str(self.point2.getState()))
                 # if self.point2.getState() != CLOSED:
                 # self.myprint("set point2 CLOSED")
                 self.myprint("self.point2.getState() before" + str(self.point2.getState()))
+                self.set_turnout_short("to_branch_1")
                 self.point2.setState(CLOSED)
                 self.myprint("self.point2.getState() after" + str(self.point2.getState()))
                 self.set_delay_if_not_simulation(3000)
-            elif fromBranch == 2:
+            elif fromBranch == branch_short_2:
                 self.myprint("get point2 THROWN")
                 self.myprint("self.point2.getState() before" + str(self.point2.getState()))
                 # if self.point2.getState() != THROWN:
                 # self.myprint("set point2 THROWN")
-                self.point2.setState(THROWN)
+                self.set_turnout_short("to_branch_2")
+                # self.point2.setState(THROWN)
                 self.myprint("self.point2.getState() after" + str(self.point2.getState()))
                 self.set_delay_if_not_simulation(3000)
             else:
@@ -1240,3 +1257,45 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
             self.update_displays(self.pegs)
         # (a0) kill other count_at_spur thread
         # self.stop_thread_sensor.setKnownState(INACTIVE)    # check out countTrucksInactive to see how this works
+
+    def set_turnout_short(self, direction):
+
+        direction_to_1  = "Closed"
+
+        if direction == "to_branch_1":
+            if direction_to_1 == "Closed":
+                self.point1.setState(CLOSED)
+            else:
+                self.point1.setState(THROWN)
+        elif direction == "to_branch_2":
+            if direction_to_1 == "Closed":
+                self.point1.setState(THROWN)
+            else:
+                self.point1.setState(CLOSED)
+
+    def set_turnout_long(self, direction)
+
+        direction_to_long  = "Closed"
+
+        if direction == "to_branch_long":
+            if direction_to_long == "Closed":
+                self.point1.setState(CLOSED)
+            else:
+                self.point1.setState(THROWN)
+        elif direction == "to_branches_short":
+            if direction_to_long == "Closed":
+                self.point1.setState(THROWN)
+            else:
+                self.point1.setState(CLOSED)
+
+    def set_throttle_direction(self, direction):
+
+        global throttle
+
+        engine_facing_sidings = True
+
+        if direction == "to_sidings":
+            if engine_facing_sidings:
+                throttle.setIsForward(True)
+            else:
+                throttle.setIsForward(False)
