@@ -1,14 +1,15 @@
 import jmri
 
 import threading
-import move_train_init as i
-import move_train_helper as h
-import move_train_call as ccc
-import move_train_recovery_helper as r2
-# import move_train_countActive as ca
-import move_train_count as c
-import move_train_recoverActive as ra
-import move_train_recoverInactive as ri
+# import move_train_init as i
+# import move_train_helper as h
+# import move_train_call as ccc
+# import move_train_recovery_helper as r2
+# # import move_train_countActive as ca
+# import move_train_count as c
+# import move_train_recoverActive as ra
+# import move_train_recoverInactive as ri
+import inspect
 import config as co
 from threading import Thread
 
@@ -19,30 +20,30 @@ from threading import Thread
 
 # unfortunately modules requiring use of jmri AbstractAutomaton tools need to remain in the main routine (such as sensors)
 
-def add_methods(*methods):
-    def decorator(Class):
-        for method in methods:
-            setattr(Class, method.__name__, method)
-        return Class
-    return decorator
+# def add_methods(*methods):
+#     def decorator(Class):
+#         for method in methods:
+#             setattr(Class, method.__name__, method)
+#         return Class
+#     return decorator
 
-@add_methods(i.myprint,i.myprint1,i.myprint2,i.indent,i.dedent)
-@add_methods(r2.storeSensorFrom, r2.storeSensorTo, r2.storeSensor, r2.storeFunction, r2.storeCount, r2.storeTimeout)
-@add_methods(ccc.place_trucks_near_disconnect)
-@add_methods(ccc.moveTrucksOneByOne)
+# @add_methods(i.myprint,i.myprint1,i.myprint2,i.indent,i.dedent)
+# @add_methods(r2.storeSensorFrom, r2.storeSensorTo, r2.storeSensor, r2.storeFunction, r2.storeCount, r2.storeTimeout)
+# @add_methods(ccc.place_trucks_near_disconnect)
+# @add_methods(ccc.moveTrucksOneByOne)
 # @add_methods(ccc.count_at_spur)
-@add_methods(ccc.moveToDisconnectPosition, ccc.move_to_spur_operations, ccc.move_to_siding_operations, ccc.strip_0)
-@add_methods(c.countTrucksInactive, c.countTrucksActive)
-@add_methods(h.setPointsAndDirection, h.setBranch, h.setMidBranch, h.setSensor)
-@add_methods(h.couple1, h.uncouple1)
-@add_methods(h.swapRouteSameDirectionTravelling,h.swapRouteOppDirectionTravelling,h.sensorName,h.stateName)
-@add_methods(h.noTrucksOnBranches, h.noTrucksOnBranch, h.moveDistance)
+# @add_methods(ccc.moveToDisconnectPosition, ccc.move_to_spur_operations, ccc.move_to_siding_operations, ccc.strip_0)
+# @add_methods(c.countTrucksInactive, c.countTrucksActive)
+# @add_methods(h.setPointsAndDirection, h.setBranch, h.setMidBranch, h.setSensor)
+# @add_methods(h.couple1, h.uncouple1)
+# @add_methods(h.swapRouteSameDirectionTravelling,h.swapRouteOppDirectionTravelling,h.sensorName,h.stateName)
+# @add_methods(h.noTrucksOnBranches, h.noTrucksOnBranch, h.moveDistance)
 #@add_methods(r.returnToBranch)
 # @add_methods(ca.moveToBranch, ca.countTrucksActive, ca.waitChangeSensorActive)
 #@add_methods(ca.moveToBranch, ca.countTrucksActive)
 #@add_methods(ci.countTrucksInactive, ci.waitChangeSensorInactive)
 
-@add_methods(ri.alt_action_countTrucksInactive)
+# @add_methods(ri.alt_action_countTrucksInactive)
 @add_methods(ra.alt_action_countTrucksActive2, ra.returnToBranch, ra.countTrucksAgain)
 
 class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
@@ -573,7 +574,7 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
         # if fromBranch == 4:
         #     if toBranch == 1:
         if fromBranch == branch_spur:
-                if toBranch == branch_long:
+            if toBranch == branch_long:
                 self.myprint("get point1 CLOSED")
                 self.myprint("self.point1.getState() before" + str(self.point1.getState()))
                 # if self.point1.getState() != CLOSED:
@@ -1273,7 +1274,7 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
             else:
                 self.point1.setState(CLOSED)
 
-    def set_turnout_long(self, direction)
+    def set_turnout_long(self, direction):
 
         direction_to_long  = "Closed"
 
@@ -1299,3 +1300,1133 @@ class Move_train2(jmri.jmrit.automat.AbstractAutomaton):
                 throttle.setIsForward(True)
             else:
                 throttle.setIsForward(False)
+
+
+    @print_name()
+    def setPointsAndDirection(self, fromBranch, toBranch):
+        # one of fromBranch or toBranch must be spur_branch
+        self.indent()
+        if self.spur_branch not in [fromBranch, toBranch]:
+            self.myprint1("spur_branch ", self.spur_branch , " must be one of ", fromBranch, toBranch)
+            cresh_here  # crash_here does not exist so crash
+        self.myprint (">>in setPointsAndDirection ")
+        self.setPoints(fromBranch,toBranch)
+        direction = self.setDirection(fromBranch, toBranch)
+        self.myprint ("end setPointsAndDirection ")
+        self.dedent()
+        return direction
+
+    @print_name()
+    def setBranch(self, sensor):
+        self.indent()
+        self.myprint ("in setBranch ")
+        self.myprint("setting branch")
+        branch = 99
+        if sensor == self.sensor1:
+            branch = 1
+        if sensor == self.sensor2:
+            branch = 2
+        if sensor == self.sensor3:
+            branch = 3
+        if sensor == self.sensor4:
+            branch = 4
+        self.myprint("end setting branch")
+        self.dedent()
+        return branch
+
+    @print_name()
+    def setMidBranch(self, sidingBranch):
+        self.indent()
+        if type(sidingBranch) != int:
+            crashhere
+        self.myprint ("in setBranch ")
+        self.myprint("setting branch")
+        midBranch = sidingBranch + 4
+        self.dedent()
+        # print ("setMidBranch: branch", sidingBranch, "modBranch", midBranch)
+        return midBranch
+
+    @print_name()
+    def setSensor(self, branch):
+        self.indent()
+        self.myprint ("in setSensor ")
+        self.myprint("setting sensor")
+        if branch == 1:
+            sensor = self.sensor1
+        if branch == 2:
+            sensor = self.sensor2
+        if branch == 3:
+            sensor = self.sensor3
+        if branch == 4:
+            sensor = self.sensor4
+        # self.myprint2("end setting sensor", "branch", branch, "sensor", sensor)
+        self.dialogs.displayMessage("end setting sensor: branch " + str(branch) + " sensor " + str(sensor))
+        self.dedent()
+        return sensor
+
+    @print_name()
+    def couple1(self, sidingBranch, timeCouple = 350):   #we use self.couple for a speed, so use couple1
+
+        self.indent()
+        self.myprint("in couple")
+
+        self.setDirection(self.spur_branch, sidingBranch)
+        # timeCouple = 350
+        self.mysound()
+        self.setSpeedSetDelay(self.couple, timeCouple)
+        self.mysound()
+        self.setSpeedSetDelay(self.stop,1000)
+        self.mysound()
+        #self.setPointsAndDirection(toBranch, fromBranch)
+        #timeReturn = 10
+        #self.setSpeedSetDelay(self.slow, timeReturn)
+        #self.setSpeedSetDelay(self.stop,1000)
+        self.myprint("finished couple part 2 waiting 2 secs")
+        #self.myprint("finished couple part 3")
+
+        self.myprint("finished couple")
+        self.dedent()
+    @print_name()
+    def uncouple1(self, sidingBranch, operation):     #we use self.uncouple as a speed, so use uncouple1
+        self.indent()
+        sensor = self.setSensor(sidingBranch)
+        self.setSpeed(self.stop)
+        if operation == "PICKUP":
+            self.myprint("in uncouple 1")
+            self.myprint("in pickup")
+
+            # #whiz forward
+            # self.setPointsAndDirection(fromBranch, toBranch)
+            # self.setSpeed(self.uncouple)
+            # #self.set_delay_if_not_simulation(500)
+            # #count twice 'cos in active
+            # #waitChangeActive(sensor)    # sets speed 0
+            # noTrucksToCount = 1  # starts from 0 ( we are in a truck so that is 0
+            # self.countTrucksActive(noTrucksToCount, sensor)
+            # self.setSpeed(stop)
+            self.mysound()
+            self.set_delay_if_not_simulation(1000)
+
+
+            #whiz back
+            self.myprint("in whizback")
+
+            direction = self.setDirection(self.spur_branch, sidingBranch)
+            self.setSpeedSetDelay(self.uncouple,50)
+            #self.set_delay_if_not_simulation(1000)
+            noTrucksToCount = 1
+            self.myprint("countTrucksInactive1", sensor)
+            simulate = False
+            self.countTrucksActive(noTrucksToCount, sensor, direction, sidingBranch, simulate)       # change to active so only a little whiz
+            #waitChangeInactive(sensor)  # sets speed 0
+            self.myprint("countTrucksInctive returned")
+            self.setSpeed(self.stop)
+            self.set_delay_if_not_simulation(1000)
+
+            #whiz forward again
+            self.myprint("in forward again")
+            direction = self.setDirection(sidingBranch, self.spur_branch)
+            self.setSpeedSetDelay(self.fast, 100)
+            #self.set_delay_if_not_simulation(100) # need to be times because has dropped off truck
+            #waitChangeActive(sensor)    # sets speed 0
+            # noTrucksToCount = 1
+            # self.countTrucksInactive(noTrucksToCount, sensor, direction, sidingBranch, simulate)    # change to active
+            # self.setSpeedSetDelay(self.stop,100)
+            self.myprint("end whiz forward")
+            self.myprint("in uncouple 1a")
+
+        if operation == "DROPOFF":
+            self.myprint("in uncouple 2")
+            #whiz back
+            self.mysound()
+            self.set_delay_if_not_simulation(1000)
+
+
+            #whiz back
+            self.myprint("in whizback")
+
+            # self.setPointsAndDirection(toBranch, fromBranch)
+            # self.setSpeedSetDelay(self.uncouple,50)
+            # #self.set_delay_if_not_simulation(1000)
+            # noTrucksToCount = 1
+            # self.countTrucksInactive(noTrucksToCount, sensor)
+            # #waitChangeInactive(sensor)  # sets speed 0
+            # self.myprint("countTrucksActive returned")
+            # self.setSpeed(self.stop)
+            # self.set_delay_if_not_simulation(1000)
+
+            #whiz forward again
+            self.myprint("in forward again")
+            direction = self.setPointsAndDirection(sidingBranch, self.spur_branch)
+            self.setSpeedSetDelay(self.fast, 100)
+            #self.set_delay_if_not_simulation(100) # need to be times because has dropped off truck
+            #waitChangeActive(sensor)    # sets speed 0
+            # noTrucksToCount = 1
+            # self.countTrucksActive(noTrucksToCount, sensor)
+            self.setSpeedSetDelay(self.stop,100)
+            self.myprint("end whiz forward")
+            self.myprint("in drop off")
+            direction = self.setPointsAndDirection(self.spur_branch, sidingBranch)
+            self.setSpeedSetDelay(self.fast,100)
+            #waitChangeInactive(sensor)  # sets speed 0
+            self.setSpeed(self.stop)
+            self.myprint("end in dropoff")
+            self.myprint2("in uncouple 2a")
+        self.dedent()
+        self.dialogs.displayMessage("end uncouple1 branch ")
+        self.myprint2("in uncouple3")
+        logging = "noprint"
+
+    #@print_name()
+    def swapRouteSameDirectionTravelling(self, fromBranch, toBranch):
+        self.indent()
+        self.myprint ("in swapRouteSameDirectionTravelling ")
+        self.setPointsAndDirection(fromBranch, toBranch)
+        self.dedent()
+
+    #@print_name()
+    def swapRouteOppDirectionTravelling(self, fromBranch, toBranch):
+        self.indent()
+        self.myprint ("in swapRouteOppDirectionTravelling ")
+        self.setPointsAndDirection(fromBranch, toBranch)
+        self.dedent()
+
+
+    #@print_name()
+    def noTrucksOnBranches(self, pegs):
+        noTrucksList = [len(x) for x in pegs]
+        return noTrucksList
+
+    #@print_name()
+    def noTrucksOnBranch(self, pegs, branch):
+        NoTrucks = len(pegs[branch - 1])
+        return NoTrucks
+
+    #@print_name()
+    def moveDistance(self, distance):
+        self.indent()
+        self.myprint("moving " , distance)
+        self.setSpeed(self.vslow)
+        if distance == self.smallDistance:
+            self.set_delay_if_not_simulation(1000)
+        else:
+            self.set_delay_if_not_simulation(1000)
+        self.setSpeed(self.stop)
+        self.set_delay_if_not_simulation(500)
+        self.dedent()
+
+    #@print_name()
+    def sensorName(self, sensor) :
+        self.indent()
+        #self.myprint ("in sensorName ")
+        if sensor == self.sensor1:
+            self.dedent()
+            return "Sensor1"
+        elif sensor == self.sensor2:
+            self.dedent()
+            return "Sensor2"
+        elif sensor == self.sensor3:
+            self.dedent()
+            return "Sensor3"
+        elif sensor == self.sensor4:
+            self.dedent()
+            return "Sensor4"
+        else:
+            self.dedent()
+            return "Invalid"
+
+    # Define routine to map status numbers to text
+    #@print_name()
+    def stateName(self, state) :
+        self.indent()
+        self.myprint ("in stateName ")
+        if (state == ACTIVE) :
+            self.dedent()
+            return "ACTIVE"
+        if (state == INACTIVE) :
+            self.dedent()
+            return "INACTIVE"
+        if (state == INCONSISTENT) :
+            self.dedent()
+            return "INCONSISTENT"
+        if (state == UNKNOWN) :
+            self.dedent()
+            return "UNKNOWN"
+        self.dedent()
+        return "(invalid)"
+    def move_to_initial_position(self):
+
+        self.no_trucks = self.get_no_trucks()
+        # assume trucks have been backed up to siding_long
+        # note position
+        positions_of_trucks = self.set_positions_of_trucks()
+
+        msg = "positions of trucks set"
+        yield ["display_message", msg]
+
+        # need to distribute them
+        [no_trucks_short, no_trucks_long, no_trucks_total] = self.get_no_trucks()
+        [turnout_short, turnout_long, turnout_main] = self.get_sidings()
+        [turnout_short_direction, turnout_long_direction, turnout_main_direction] = self.get_turnout_directions()
+
+        # put no_trucks_long on siding_long
+
+        no_trucks_to_move = no_trucks_long
+        destBranch = 1      # siding_long
+        fromBranch = 4      # sput
+
+        msg = "moving from " + str(fromBranch) + " to " + str("destBranch")
+        yield ["display_message", msg]
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
+        # put rest of trucks on siding 2
+
+        no_trucks_to_move = no_trucks_total - no_trucks_long
+        destBranch = 2      # sput
+        fromBranch = 1      # siding_long
+
+        msg = "moving from " + str(fromBranch) + " to " + str("destBranch")
+        yield ["display_message", msg]
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
+        # put rest on siding_short
+
+        no_trucks_to_move = 0
+        destBranch = 4      # sput
+        fromBranch = 2     # siding_long
+
+        msg = "moving from " + str(fromBranch) + " to " + str("destBranch")
+        yield ["display_message", msg]
+
+        for p in self.moveTrucksCreatingYieldStatements(no_trucks_to_move, fromBranch, destBranch): yield p
+
+
+    # @print_name()
+    # def generate_first_instructions(self):
+    #     self.indent()
+    #     # the move trucks instruction is shown commented out, so we can see what the yield does
+    #     # moveTrucks(self, noTrucksOnTrain, noTruckstoMove, fromBranch, destBranch):
+    #
+    #     # we move from branch 4 to branch 3 depositing all 5 trucks
+    #     self.dedent()
+    #     pass
+
+
+    # Procedure
+    #
+    #     trucks on train yyzz (zz = x_old)
+    #     depositing zz  (x_old)
+    #     trucks on siding www
+    #     picking up xx
+    #         yyzz*www
+    #     move to left zz then to right xx
+    #     connect -zz + xx
+    #     trucks on train = yyzz - zz + xx
+    #
+    # on siding   move x to dest
+    #
+    # 0) move 0
+    #     b) move to siding
+    #         move x = 0
+    #         trucks on train y = 0
+    #         x_old = 0
+    #         y_old = 0
+    #
+    # 1) move x [init from dest]
+    #     a) move to spur
+    #         move 	x = 0
+    #         connect -x_old + x
+    #         trucks y = y_old - x_old + x
+    #     b) move to 'from' siding     (start here)
+    #         move 	x_old = x  (= 0 first)
+    #         trucks 	y_old = y  (= 0 first)
+    #
+    # 2) move to dest:  x trucks
+    #     a) move to spur
+    #         connect - x_old + x
+    #         move 	x
+    #         trucks 	y = y_old - x_old + x
+    #
+    #     b) move to dest siding
+    #         move 	x_old = x
+    #         trucks	y_old = y
+
+
+    # DROPOFF
+    # we do two threads
+    # stop_thread_sensor = False
+    # 1) check for truck  (is_there_a_truck_
+    #     stop_flag = False  # only checked when stop_sensor True
+    #     stop_sensor = false
+    #     if check for truck count = 1
+    #         stop_thread_sensor True
+    #         rectify_flag = True
+    #     if check_for_truck timed out
+    #         rectify_flag = False
+    #
+    # 2) move to spur  (count_at_spur)
+    #     check for stop_thread_sensor True while checkingh sensors
+    #     self.stop_thread_flag set true in simulate
+    #     self.stop_thread_flag is set if waiting for sensor (this is just the stop_thread_sensor flag
+    #
+    #     updates self.number_of_trucks_to_move_back
+    #     if stop_thread_flag set True:
+    #         stops prematurely to recover
+    #
+    # wait for above two threads to complete
+    #
+    # start below two threads if self.recover_flag set
+    #
+    # 3) recover_truck_to_siding if previous two have finished
+    #     moves back  1 truck  (simulation)
+    #
+    # 3) recover_trucks_to_mid if previous two have finished
+    #     moves back  self.number_of_trucks_to_move_back to mid
+    #
+    #
+    # 4) alt_function
+    #     if check_for_truck times out
+    #         sets stop_sensor True
+    #         sets stop_flag False
+
+    @print_name()
+    def move_to_spur_operations(self, sidingBranch, noTrucksToMove, noTrucksToMove_old):
+        amountToMove = noTrucksToMove - noTrucksToMove_old     #
+
+        self.time_to_countInactive_one_truck = self.set_time_to_countInactive_one_truck()    # need different times for simulation and real life
+
+        # move to correct position and uncouple
+        operation = self.moveToDisconnectPosition(self.noTrucksOnTrain, amountToMove, sidingBranch)
+        self.myprint2("operation", operation)
+        self.noTrucksOnTrain = self.noTrucksOnTrain + amountToMove
+        # operation is "PICKUP" or "DROPOFF"
+        self.uncouple1(sidingBranch, operation)
+
+        if operation == "DROPOFF" or \
+                operation == "PICKUP":     #error does not uncouple
+            print "in operation", operation
+            repeat = True
+            self.index = 1
+            while repeat:
+                self.rectify_flag = False
+                print "in repeat"
+                self.dialogs.displayMessage1("In operation " + str(operation) + " in move_to_spur repeat")
+                self.sidingBranch = sidingBranch                    # needed for alternate_function decorator: see is_there_a_truck
+                self.noTrucksToMove = noTrucksToMove                # needed for alternate_function decorator: see is_there_a_truck
+                t1 = Thread(target=self.is_there_a_truck, args=(sidingBranch, noTrucksToMove))   #sets rectify_flag if counts a truck
+                # and sets stop_thread_sensor
+                t2 = Thread(target=self.count_at_spur, args=(sidingBranch, noTrucksToMove))
+
+                t1.start()      # stop_thread_sensor and self.rectify_flag set here if trucks do not uncouple and counts a truck
+                t2.start()      # stops prematurely if stop_thread_sensor set
+                t1.join()
+                self.myprint2("**************** t1 joined")
+                t2.join()
+                self.myprint2("**************** t2 joined", "self.rectify_flag", self.rectify_flag)
+                if self.rectify_flag == True:
+                    t3 = Thread(target=self.rectify_trucks_back_to_siding, args=(sidingBranch,))
+                    t4 = Thread(target=self.rectify_trucks_back_to_mid, args=(sidingBranch,))
+                    t3.start()   # moves trucks back to siding
+                    t4.start()   # move trucks back to mid
+                    t3.join()
+                    self.myprint2("**************** t3 joined")
+                    t4.join()
+                    self.myprint2("**************** t4 joined")
+                    repeat = True
+                else:
+                    self.myprint2("**************** repeat false")
+                    repeat = False
+                self.index += 1
+                self.myprint2("******************move_to_spur_operations: repeat", repeat)
+        else:
+            print "in operation PICKUP"
+            repeat = True
+            self.index = 1
+            while repeat:
+                print "in repeat"
+                self.sidingBranch = sidingBranch                    # needed for alternate_function decorator: see is_there_a_truck
+                self.noTrucksToMove = noTrucksToMove                # needed for alternate_function decorator: see is_there_a_truck
+                t1 = Thread(target=self.is_there_a_truck, args=(sidingBranch, noTrucksToMove))   #sets rectify_flag if counts a truck
+                # and sets stop_thread_sensor
+                t2 = Thread(target=self.count_at_spur, args=(sidingBranch, noTrucksToMove))
+
+                t1.start()      # stop_thread_sensor and self.rectify_flag set here if trucks do not uncouple and counts a truck
+                t2.start()      # stops prematurely if stop_thread_sensor set
+                t1.join()
+                self.myprint2("**************** t1 joined")
+                t2.join()
+
+            self.count_at_spur(sidingBranch, noTrucksToMove)
+
+    @print_name()
+    def move_to_siding_operations(self, sidingBranch, noTrucksToMove):
+
+        # the move operation will be done in the head operation
+        # store variables which will be required
+        # self.noTrucksToMoveFromPreviousStep = self.noTrucksToMove
+
+        direction = self.setPointsAndDirection(self.spur_branch, sidingBranch)
+        self.set_delay_if_not_simulation(5000)
+
+        sensor = self.setSensor(self.spur_branch)
+        self.countTrucksInactive(self.noTrucksOnTrain, sensor, direction, sidingBranch)  # leave the moving to the next movement
+
+        sensor = self.setSensor(sidingBranch)     # a siding branch
+        noTrucksToDetect = 0            #we are not moving trucks, we are only detecting the first one at the beginning of it.
+        self.countTrucksInactive(noTrucksToDetect, sensor, direction, sidingBranch)  # leave the moving to the next movement
+
+
+
+
+    @print_name()
+    def moveToDisconnectPosition(self, noTrucksOnTrain, noTrucksToAdd, sidingBranch):
+
+        self.indent()
+        noTrucksToCount = abs(noTrucksToAdd)    #Trucks to add to train
+        self.dialogs.displayMessage("moveToDisconnectPosition")
+        if noTrucksToAdd >= 0:   # picking up trucks
+            # operation = "PICKUP"
+            # direction = self.setPointsAndDirection(sidingBranch, self.spur_branch)
+            # sensor = self.setSensor(sidingBranch)
+            # self.countTrucksActive(noTrucksToCount, sensor, direction, sidingBranch)  # counts from 0     $$$$$$$$$$$$$changed$$$$$$$$$$$$$$
+            # self.set_delay_if_not_simulation(2000)
+            operation = "PICKUP"
+
+            print "in operation", operation
+            repeat = True
+            self.index2 = 1
+            while repeat:
+                self.rectify_flag2 = True
+                print "in repeat"
+                self.dialogs.displayMessage1("repeating moveToDisconnectPosition")
+                self.sidingBranch = sidingBranch                    # needed for alternate_function decorator: see count_at_siding__is_there_a_truck_error_if_none
+                self.noTrucksToCount = 1                             # needed for alternate_function decorator: see is_thecount_at_siding__is_there_a_truck_error_if_nonere_a_truck
+                self.simulate = True
+
+                # stage1 count 1 truck and time out if there is none (it is an error if there is none and we don't want to wait until the time for all the trucks before timing outy
+
+                # t1 = Thread(target=self.count_at_siding__is_there_a_truck_error_if_none, args=(sidingBranch, noTrucksToCount))   #sets rectify_flag false if counts a truck
+                # self.time_to_countActive_n_trucks = self.time_to_countInactive_one_truck * noTrucksToCount
+                self.simulate = True
+                self.count_at_siding__is_there_a_truck_error_if_none(sidingBranch, self.noTrucksToCount, self.time_to_countInactive_one_truck, self.simulate)    # sets rectify_flag false if counts a truck
+
+                # # # and sets stop_thread_sensor
+                # t2 = Thread(target=self.count_at_siding, args=(sidingBranch, noTrucksToCount))
+                # #
+                # t1.start()      # stop_thread_sensor and self.rectify_flag set here if trucks do not uncouple and counts a truck
+                # t2.start()      # stops prematurely if stop_thread_sensor set
+                # t1.join()
+                # # self.myprint2("**************** t1 joined")
+                # t2.join()
+                # self.myprint2("**************** t2 joined", "self.rectify_flag", self.rectify_flag)
+                #self.rectify_flag = False
+                self.dialogs.displayMessage1("finished stage1 rectify_flag2" + str(self.rectify_flag2))
+                if self.rectify_flag2 == True:
+                    self.dialogs.displayMessage1("rectify_flag2 " + str(self.rectify_flag2))
+                    self.rectify_connect_up_again(sidingBranch)
+                    # t3 = Thread(target=self.rectify_connect_up_again, args=(sidingBranch,))
+                    # # t4 = Thread(target=self.rectify_trucks_back_to_mid, args=(sidingBranch,))
+                    # t3.start()   # moves trucks back to siding
+                    # # t4.start()   # move trucks back to mid
+                    # t3.join()
+                    # # self.myprint2("**************** t3 joined")
+                    # # t4.join()
+                    # self.myprint2("**************** t4 joined")
+                    self.dialogs.displayMessage1("repeating")
+                    repeat = True
+                else:
+
+                    self.noTrucksToCount = noTrucksToCount - 1  # we have already counted one
+                    self.dialogs.displayMessage2("don't need to rectify: counting " + str(self.noTrucksToCount) + " more trucks")
+                    direction = self.setPointsAndDirection(sidingBranch, self.spur_branch)
+                    sensor = self.setSensor(sidingBranch)
+                    self.countTrucksActive(self.noTrucksToCount, sensor, direction, sidingBranch)  # counts from 0
+                    self.dialogs.displayMessage1("done all trucks to disconnect not repeating")
+                    repeat = False
+                self.index2 += 1
+                self.myprint2("******************move_to_spur_operations: repeat", repeat,"index2", self.index2)
+                self.dialogs.displayMessage2("finished repeat = " + str(repeat) + " index2 " + str(self.index2))
+
+        elif noTrucksToAdd < 0: # dropping off trucks
+            operation = "DROPOFF"
+            print "in operation", operation
+            if noTrucksToCount > noTrucksOnTrain:
+                self.myprint("!!!!>>moveToDisconnectTrucks: dropping off trucks: error not enough trucks")
+                crash_here   # does not exist so crashes
+            self.myprint2("sidingBranch00", sidingBranch)
+            direction = self.setPointsAndDirection(self.spur_branch, sidingBranch)
+            self.myprint2("sidingBranch0", sidingBranch)
+            sensor = self.setSensor(sidingBranch)
+            self.myprint2("sidingBranch1", sidingBranch)
+            self.countTrucksActive(noTrucksToCount, sensor, direction, sidingBranch)  # counts from 0
+            self.myprint2("sidingBranch2", sidingBranch)
+            self.set_delay_if_not_simulation(2000)
+            operation = "DROPOFF"
+        else:  # noTrucksToAdd == 0:
+            operation = "PICKUP"
+            pass
+        self.myprint("end moveToDisconnectPosition ")
+        self.dedent()
+        return operation
+
+    @print_name()
+    def moveTrucksOneByOne(self, noTrucksToMove, fromBranch, destBranch, ListOfTrucksInBranches):
+        self.indent()
+
+        if self.spur_branch not in [fromBranch, destBranch]:
+            noTrucksToMoveInOneGo = 1
+            noOfRepetitions = noTrucksToMove
+        else: # all can be done in one journey
+            noTrucksToMoveInOneGo = noTrucksToMove
+            noOfRepetitions = 1
+        for i in range(noOfRepetitions):
+            self.myprint2(">>>>>movetrucksonebyone  truck", i)
+            self.dialogs.displayMessage(">>>>>movetrucksonebyone  truck" + str(i))
+
+            ListOfTrucksInBranches = [len(x) for x in self.pegs]
+            self.moveTrucks(noTrucksToMoveInOneGo, fromBranch, destBranch, self.pegs)
+
+            ListOfTrucksInBranches = [len(x) for x in self.pegs]
+            self.myprint("ListOfTrucksInBranches after", ListOfTrucksInBranches)
+        self.dedent()
+
+    def place_trucks_near_disconnect(self, branch):
+        if branch != self.spur_branch:
+            self.place_trucks_near_disconnect_siding = True
+        self.update_displays(self.pegs)
+
+    def strip_0(self, pegs):
+        list1 = []
+        # print("*************")
+        print("strip_0 pegs: " , pegs)
+        for deque in pegs:
+            list = [item for item in deque if item>0]
+            list1 .append(list)
+        print("strip_0 list1: " , list1)
+        print("*************")
+        return list1
+
+    @print_name()
+    def countTrucksInactive(self, noTrucksToCount, sensor, direction, sidingBranch, simulate = True):
+        self.indent()
+        if self.get_branch_from_sensor(sensor) == self.spur_branch: count_from = -1 #count engine
+        else: count_from = 0
+        off_count = 99   #dummy value
+        if count_from == noTrucksToCount:   #if simulate_countTrucksInactive is not being triggered
+            self.update_displays(self.pegs)
+        self.myprint2("***************counting the trucks********************")
+        self.no_trucks_to_rectify = 0     # required if need to put the trucks back
+        for off_count in range(count_from, noTrucksToCount):
+            self.myprint2("**************off_count**********************", off_count, "count_from", count_from, "noTrucksToCount", noTrucksToCount )
+            # self.top_thread may be set in either simulate_countTrucksInactive or really_doit_countTrucksInactive
+            if simulate:
+                self.simulate_countTrucksInactive(sidingBranch, sensor, direction, off_count, self.pegs)
+                self.no_trucks_to_rectify = max([off_count, 0]) + 1
+            self.really_doit_countTrucksInactive(sensor)
+            self.myprint2("finished reallydoit")
+            self.myprint2("stop_thread1", self.stop_thread)
+
+            # if self.stop_thread == True:
+            #     print ("stop_thread2", self.stop_thread)
+            #     if simulate:
+            #         self.stop_thread == False
+            #         print ("******************moving the trucks back ****************stop_thread3", self.stop_thread)
+            #         for off_count1 in range(off_count, count_from, -1):
+            #             print ("off_count1", off_count1, "off_count", off_count,"count_from",count_from, "noTrucksToCount", noTrucksToCount )
+            #             direction1 = self.swap_direction(direction)
+            #             self.simulate_countTrucksInactive(sidingBranch, sensor, direction1, off_count, self.pegs)
+            #     break
+        self.setSpeed(self.stop)
+        self.dedent()
+
+    @print_name()
+    def countTrucksActive(self, noTrucksToCount, sensor, direction, sidingBranch, simulate = True):
+        self.indent()
+        if self.get_branch_from_sensor(sensor) == self.spur_branch: count_from = -1
+        else: count_from = 0
+        if count_from == noTrucksToCount:   #if simulate_countTrucksInactive is not being triggered
+            self.update_displays(self.pegs)
+        for on_count in range(count_from, noTrucksToCount):
+            # if (on_count - count_from) > 0 and simulate:
+            if simulate:
+                self.simulate_countTrucksActive(sidingBranch, sensor, direction, on_count, self.pegs)
+            self.really_doit_countTrucksActive(sensor)
+        self.really_doit_countTrucksActive(sensor)          # need an extra count because we are counting the front of the truck
+        self.setSpeed(self.stop)
+        self.dedent()
+
+    @print_name()
+    def setPointsAndDirection(self, fromBranch, toBranch):
+        # one of fromBranch or toBranch must be spur_branch
+        self.indent()
+        if self.spur_branch not in [fromBranch, toBranch]:
+            self.myprint1("spur_branch ", self.spur_branch , " must be one of ", fromBranch, toBranch)
+            cresh_here  # crash_here does not exist so crash
+        self.myprint (">>in setPointsAndDirection ")
+        self.setPoints(fromBranch,toBranch)
+        direction = self.setDirection(fromBranch, toBranch)
+        self.myprint ("end setPointsAndDirection ")
+        self.dedent()
+        return direction
+
+    @print_name()
+    def setBranch(self, sensor):
+        self.indent()
+        self.myprint ("in setBranch ")
+        self.myprint("setting branch")
+        branch = 99
+        if sensor == self.sensor1:
+            branch = 1
+        if sensor == self.sensor2:
+            branch = 2
+        if sensor == self.sensor3:
+            branch = 3
+        if sensor == self.sensor4:
+            branch = 4
+        self.myprint("end setting branch")
+        self.dedent()
+        return branch
+
+    @print_name()
+    def setMidBranch(self, sidingBranch):
+        self.indent()
+        if type(sidingBranch) != int:
+            crashhere
+        self.myprint ("in setBranch ")
+        self.myprint("setting branch")
+        midBranch = sidingBranch + 4
+        self.dedent()
+        # print ("setMidBranch: branch", sidingBranch, "modBranch", midBranch)
+        return midBranch
+
+    @print_name()
+    def setSensor(self, branch):
+        self.indent()
+        self.myprint ("in setSensor ")
+        self.myprint("setting sensor")
+        if branch == 1:
+            sensor = self.sensor1
+        if branch == 2:
+            sensor = self.sensor2
+        if branch == 3:
+            sensor = self.sensor3
+        if branch == 4:
+            sensor = self.sensor4
+        # self.myprint2("end setting sensor", "branch", branch, "sensor", sensor)
+        self.dialogs.displayMessage("end setting sensor: branch " + str(branch) + " sensor " + str(sensor))
+        self.dedent()
+        return sensor
+
+    @print_name()
+    def couple1(self, sidingBranch, timeCouple = 350):   #we use self.couple for a speed, so use couple1
+
+        self.indent()
+        self.myprint("in couple")
+
+        self.setDirection(self.spur_branch, sidingBranch)
+        # timeCouple = 350
+        self.mysound()
+        self.setSpeedSetDelay(self.couple, timeCouple)
+        self.mysound()
+        self.setSpeedSetDelay(self.stop,1000)
+        self.mysound()
+        #self.setPointsAndDirection(toBranch, fromBranch)
+        #timeReturn = 10
+        #self.setSpeedSetDelay(self.slow, timeReturn)
+        #self.setSpeedSetDelay(self.stop,1000)
+        self.myprint("finished couple part 2 waiting 2 secs")
+        #self.myprint("finished couple part 3")
+
+        self.myprint("finished couple")
+        self.dedent()
+    @print_name()
+    def uncouple1(self, sidingBranch, operation):     #we use self.uncouple as a speed, so use uncouple1
+        self.indent()
+        sensor = self.setSensor(sidingBranch)
+        self.setSpeed(self.stop)
+        if operation == "PICKUP":
+            self.myprint("in uncouple 1")
+            self.myprint("in pickup")
+
+            # #whiz forward
+            # self.setPointsAndDirection(fromBranch, toBranch)
+            # self.setSpeed(self.uncouple)
+            # #self.set_delay_if_not_simulation(500)
+            # #count twice 'cos in active
+            # #waitChangeActive(sensor)    # sets speed 0
+            # noTrucksToCount = 1  # starts from 0 ( we are in a truck so that is 0
+            # self.countTrucksActive(noTrucksToCount, sensor)
+            # self.setSpeed(stop)
+            self.mysound()
+            self.set_delay_if_not_simulation(1000)
+
+
+            #whiz back
+            self.myprint("in whizback")
+
+            direction = self.setDirection(self.spur_branch, sidingBranch)
+            self.setSpeedSetDelay(self.uncouple,50)
+            #self.set_delay_if_not_simulation(1000)
+            noTrucksToCount = 1
+            self.myprint("countTrucksInactive1", sensor)
+            simulate = False
+            self.countTrucksActive(noTrucksToCount, sensor, direction, sidingBranch, simulate)       # change to active so only a little whiz
+            #waitChangeInactive(sensor)  # sets speed 0
+            self.myprint("countTrucksInctive returned")
+            self.setSpeed(self.stop)
+            self.set_delay_if_not_simulation(1000)
+
+            #whiz forward again
+            self.myprint("in forward again")
+            direction = self.setDirection(sidingBranch, self.spur_branch)
+            self.setSpeedSetDelay(self.fast, 100)
+            #self.set_delay_if_not_simulation(100) # need to be times because has dropped off truck
+            #waitChangeActive(sensor)    # sets speed 0
+            # noTrucksToCount = 1
+            # self.countTrucksInactive(noTrucksToCount, sensor, direction, sidingBranch, simulate)    # change to active
+            # self.setSpeedSetDelay(self.stop,100)
+            self.myprint("end whiz forward")
+            self.myprint("in uncouple 1a")
+
+        if operation == "DROPOFF":
+            self.myprint("in uncouple 2")
+            #whiz back
+            self.mysound()
+            self.set_delay_if_not_simulation(1000)
+
+
+            #whiz back
+            self.myprint("in whizback")
+
+            # self.setPointsAndDirection(toBranch, fromBranch)
+            # self.setSpeedSetDelay(self.uncouple,50)
+            # #self.set_delay_if_not_simulation(1000)
+            # noTrucksToCount = 1
+            # self.countTrucksInactive(noTrucksToCount, sensor)
+            # #waitChangeInactive(sensor)  # sets speed 0
+            # self.myprint("countTrucksActive returned")
+            # self.setSpeed(self.stop)
+            # self.set_delay_if_not_simulation(1000)
+
+            #whiz forward again
+            self.myprint("in forward again")
+            direction = self.setPointsAndDirection(sidingBranch, self.spur_branch)
+            self.setSpeedSetDelay(self.fast, 100)
+            #self.set_delay_if_not_simulation(100) # need to be times because has dropped off truck
+            #waitChangeActive(sensor)    # sets speed 0
+            # noTrucksToCount = 1
+            # self.countTrucksActive(noTrucksToCount, sensor)
+            self.setSpeedSetDelay(self.stop,100)
+            self.myprint("end whiz forward")
+            self.myprint("in drop off")
+            direction = self.setPointsAndDirection(self.spur_branch, sidingBranch)
+            self.setSpeedSetDelay(self.fast,100)
+            #waitChangeInactive(sensor)  # sets speed 0
+            self.setSpeed(self.stop)
+            self.myprint("end in dropoff")
+            self.myprint2("in uncouple 2a")
+        self.dedent()
+        self.dialogs.displayMessage("end uncouple1 branch ")
+        self.myprint2("in uncouple3")
+        logging = "noprint"
+
+    #@print_name()
+    def swapRouteSameDirectionTravelling(self, fromBranch, toBranch):
+        self.indent()
+        self.myprint ("in swapRouteSameDirectionTravelling ")
+        self.setPointsAndDirection(fromBranch, toBranch)
+        self.dedent()
+
+    #@print_name()
+    def swapRouteOppDirectionTravelling(self, fromBranch, toBranch):
+        self.indent()
+        self.myprint ("in swapRouteOppDirectionTravelling ")
+        self.setPointsAndDirection(fromBranch, toBranch)
+        self.dedent()
+
+
+    #@print_name()
+    def noTrucksOnBranches(self, pegs):
+        noTrucksList = [len(x) for x in pegs]
+        return noTrucksList
+
+    #@print_name()
+    def noTrucksOnBranch(self, pegs, branch):
+        NoTrucks = len(pegs[branch - 1])
+        return NoTrucks
+
+    #@print_name()
+    def moveDistance(self, distance):
+        self.indent()
+        self.myprint("moving " , distance)
+        self.setSpeed(self.vslow)
+        if distance == self.smallDistance:
+            self.set_delay_if_not_simulation(1000)
+        else:
+            self.set_delay_if_not_simulation(1000)
+        self.setSpeed(self.stop)
+        self.set_delay_if_not_simulation(500)
+        self.dedent()
+
+    #@print_name()
+    def sensorName(self, sensor) :
+        self.indent()
+        #self.myprint ("in sensorName ")
+        if sensor == self.sensor1:
+            self.dedent()
+            return "Sensor1"
+        elif sensor == self.sensor2:
+            self.dedent()
+            return "Sensor2"
+        elif sensor == self.sensor3:
+            self.dedent()
+            return "Sensor3"
+        elif sensor == self.sensor4:
+            self.dedent()
+            return "Sensor4"
+        else:
+            self.dedent()
+            return "Invalid"
+
+    # Define routine to map status numbers to text
+    #@print_name()
+    def stateName(self, state) :
+        self.indent()
+        self.myprint ("in stateName ")
+        if (state == ACTIVE) :
+            self.dedent()
+            return "ACTIVE"
+        if (state == INACTIVE) :
+            self.dedent()
+            return "INACTIVE"
+        if (state == INCONSISTENT) :
+            self.dedent()
+            return "INCONSISTENT"
+        if (state == UNKNOWN) :
+            self.dedent()
+            return "UNKNOWN"
+        self.dedent()
+        return "(invalid)"
+
+    def storeSensorFrom(self, sensor):
+        self.sensor_from_stored = sensor
+    #self.sensor_from_name = "sensor_from_stored" #this is done at declaration time
+
+    def storeSensorTo(self, sensor):
+        self.sensor_to_stored = sensor
+        #self.sensor_to_name = "sensor_to_stored" #this is done at declaration time
+
+    def storeSensor(self, sensor):
+        self.sensor_stored = sensor
+        #self.sensor_name = "sensor_stored"    #this is done at declaration time
+
+    def storeFunction(self, function):
+        self.function_stored = function
+        #self.function_name = "function_stored"    #this is done at declaration time
+
+    def storeCount(self, count):
+        self.count_stored = count
+        #self.count_name = "count_stored"    #this is done at declaration time
+
+    def storeTimeout(self, timeout):
+        self.timeout_stored = timeout
+        #self.timeout
+
+    def myprint(self, *args):
+        if False:     #set to True od False depending upon whether you want to print error messages
+            print(" " * self.indentno),
+            for arg in args:
+                print (arg),
+            print("")
+            # msg = " " * self.indentno
+            # #print(msg + "!")
+            # for arg in args:
+            #     msg = msg + " " + str(arg)
+
+    def myprint2(self, *args):
+        # indent fro threads
+        function_names_in_stack = [x[3] for x in inspect.stack()]
+        # is_there_a_truck_in_hierarchy = y.count("is_there_a_truck")
+        # count_at_spur_in_hierarchy = y.count("count_at_spur")
+        is_there_a_truck_in_hierarchy = function_names_in_stack.count("is_there_a_truck")
+        count_at_spur_in_hierarchy = function_names_in_stack.count("count_at_spur")
+        rectify_mid_in_hierarchy = function_names_in_stack.count("rectify_trucks_back_to_mid")
+        rectify_siding_in_hierarchy = function_names_in_stack.count("rectify_trucks_back_to_siding")
+        # if is_there_a_truck_in_hierarchy:
+        # indenta = 10 * is_there_a_truck_in_hierarchy + 20 * count_at_spur_in_hierarchy
+        indenta = 10 * is_there_a_truck_in_hierarchy + 20 * count_at_spur_in_hierarchy + \
+                  10 * rectify_mid_in_hierarchy + 20 * rectify_siding_in_hierarchy
+
+        # indent 2 spaced for each call
+        if True:     #set to True or False depending upon whether you want to print error messages
+            print(" " * self.indentno),
+            print(" " * indenta),
+            for arg in args:
+                print (arg),
+            print("")
+            # msg = " " * self.indentno + " " * indenta
+            # #print(msg + "!")
+            # for arg in args:
+            #     msg = msg + " " + str(arg)
+
+    def myprint1(self, *args):
+
+        if self.display_message_flag == None:
+            self.display_message_flag = False
+
+        #if self.display_message_flag:
+        if False:
+            print(" " * self.indentno),
+            for arg in args:
+                print (arg),
+            print("")
+            msg = " " * self.indentno
+            #print(msg + "!")
+            for arg in args:
+                msg = msg + " " + str(arg)
+            #logging.debug(msg)
+        #     print "display_message_flag myprint1", self.display_message_flag
+        # else:
+        #     print "display_message_flag myprint1", self.display_message_flag
+
+
+    # # use external "nircmd" command to "speak" some text  (I prefer this voice to eSpeak)
+    # def speak(self,msg) :
+    # #uncomment next line for speech (Jenkins doesn't like this command)
+    # print("about to speak")
+    # java.lang.Runtime.getRuntime().exec('Z:\\ConfigProfiles\\jython\\sound2\\nircmd speak text "' + msg +'"')
+    # return
+
+
+    def indent(self):
+
+        self.indentno = self.indentno + 2
+
+    def dedent(self):
+        self.indentno = self.indentno - 2
+
+    def alt_action_countTrucksInactive(self,sensor):
+        self.indent()
+        self.myprint ("in alt_action_countTrucksActive1 ")
+        #speak("in alt_action_countTrucksActive1")
+        self.myprint ("end alt_action_countTrucksActive1 ")
+        self.dedent()
+
+    def alt_action_countTrucksActive2(self, fromSensor):
+        global glb_count
+        #self.indent()
+        self.myprint ("in alt_action_countTrucksActive2 ")
+
+
+        self.setSpeed(self.stop)
+
+        self.myprint("WAITING")
+        self.waitMsec(10000)
+
+        sp = Speak()
+
+        sp.speak("in alt_action_countTrucksActive2")
+        self.waitMsec(5000)
+
+        #change direction of travel
+        self.myprint ("sensor:", fromSensor)
+
+        mySensorName = self.sensorName(fromSensor)
+        sp.speak("at sensor " + mySensorName)
+
+        #move back to sensorFrom
+        self.myprint("alt_action_countTrucksActive2 w")
+        fromBranch = None
+        self.myprint("alt_action_countTrucksActive2 w1")
+        fromBranch = self.setBranch(fromSensor)
+        self.myprint("alt_action_countTrucksActive2 x")
+
+        self.myprint("No trucks to return glb_count" , glb_count)
+        noTrucksToReturn = glb_count
+        self.returnToBranch(self.noTrucksOnTrain, noTrucksToReturn, fromBranch)
+
+        self.myprint("glb_count after returnToBranch" , glb_count)
+
+
+        self.myprint("alt_action_countTrucksActive2 y")
+
+        self.setSpeed(self.stop)
+        self.moveDistance(self.smallDistance)
+        self.couple1(fromBranch)
+        self.changeDirection()
+        self.moveDistance(self.smallDistance)
+        self.myprint("alt_action_countTrucksActive2 z")
+
+        sensor = self.setSensor(4)
+        self.myprint("noTrucksToCountAgain glb_count" , glb_count)
+        noTrucksToCountAgain = glb_count
+        self.myprint("noTrucksToCountAgain " , noTrucksToCountAgain)
+        self.countTrucksAgain(noTrucksToCountAgain, fromSensor)
+
+        self.myprint("WAITING")
+        speak("We have recounted the trucks successfully")
+        self.waitMsec(10000)
+        self.dedent()
+
+    def returnToBranch(self, noTrucksOnTrain, noTrucksToMove, destBranch):
+        self.indent()
+        # move the train to destbranch without any coupling or decoupling
+        # we have already checked that the branch we are in is not destBranch
+        self.myprint(">>in returnToBranch")
+        self.myprint("noTrucksToMove " + str(noTrucksToMove) + " destBranch " + str(destBranch))
+
+
+
+        if destBranch != 4:
+            #announce that are moving trucks
+            #speak = ("moving to branch " + str(destBranch))
+
+            self.myprint("destBranch != 4:"+ str(destBranch))
+            direction = self.setPointsAndDirection(4,destBranch)
+            self.waitMsec(5000)
+            noToCount = noTrucksToMove
+            sensor = self.setSensor(destBranch)
+            self.myprint("returnToBranch 0")
+            #self.countTrucksActive(noTrucksToMove, sensor)
+
+            #self.setSpeed(self.slow)
+            self.countTrucksActive(noToCount, sensor, direction, withRecovery = False)  # leave the moving to the next movement
+            self.myprint("returnToBranch 1")
+
+            #self.myprint("about to couple")
+            #self.couple1(destBranch)
+            self.setSpeed(self.stop)
+            self.myprint("returnToBranch 2")
+        else:
+            #speak = ("moving to head")
+            self.myprint("moving to branch 4")
+            #the points will have been set as we are moving back to branch 4
+            anyBranch = 1  # choose any branch, the direction is the same
+            direction = self.setDirection(anyBranch,4)
+            #self.setSpeed(self.slow)
+            # going towards head count number of times becomes inactive
+
+            sensor = self.setSensor(destBranch)
+            self.myprint ("noTrucksOnTrain before = ", self.noTrucksOnTrain)
+            self.myprint ("noTrucksToMove before = ", noTrucksToMove)
+            self.noTrucksOnTrain += noTrucksToMove
+            self.myprint ("noTrucksOnTrain after = ", self.noTrucksOnTrain)
+            extra = 1 # for engine count
+            #speak("counting"+str(self.noTrucksOnTrain)+"trucks and engine")
+            self.countTrucksActive(self.noTrucksOnTrain + extra, sensor, direction, withRecovery = False) #counting all trucks on train
+            self.setSpeed(self.stop)
+
+        self.myprint("end returnToBranch: " + "noTrucksToMove " + str(noTrucksToMove) + " destBranch " + str(destBranch))
+        self.dedent()
+
+    def countTrucksAgain(self, noTrucksToCount, sensor):
+        # the number of trucks to count is the number already counted plus 1 (including the failed one)
+        self.indent()
+        self.myprint("In countTrucksAgain")
+        self.setSpeed(self.stop)
+        self.myprint("Calling countTrucksActive")
+        self.countTrucksActive(noTrucksToCount, sensor, direction, withRecovery = False)
+        self.myprint("counted the trucks successfully")
+        self.setSpeed(self.stop)

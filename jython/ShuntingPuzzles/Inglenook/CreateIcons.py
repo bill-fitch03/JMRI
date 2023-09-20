@@ -366,7 +366,7 @@ class processPanels():
                 #         deleteList.append(icon)
                 comment = sensor.getComment()
                 if comment is not None:
-                    if '#IS_siding' in comment or '#IS_spur' in comment:
+                    if '#IS_siding' in comment or '#IS_headshunt' in comment:
                         deleteList.append(icon)
 
         for item in deleteList:
@@ -455,8 +455,8 @@ class processPanels():
                         self.add_truck_blocks(blockname, 8, "3")
                     # elif "#IS_block_mid#" in comment:
                     #     self.add_truck_blocks(blockname, 3, "mid")
-                    elif "#IS_block_spur#" in comment:
-                        self.add_truck_blocks(blockname, 4, "spur")
+                    elif "#IS_block_headshunt#" in comment:
+                        self.add_truck_blocks(blockname, 4, "headshunt")
                     else:
                         pass
                     #self.list_of_inglenook_sidings.append(block.getUserName())

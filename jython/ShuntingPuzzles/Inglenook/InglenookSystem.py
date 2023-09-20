@@ -534,14 +534,14 @@ def update_comment(siding_name, siding_sensor):
 def OK_action(event):
 
     global sensorComboBox, blockComboBox, turnoutComboBox, turnoutDirectionCombobox, engineDirectionComboBox, no_trucksComboBox
-    [spur_cb, sensor1_cb, sensor2_cb, sensor3_cb]= sensorComboBox
+    [sensor1_cb, sensor2_cb, sensor3_cb, spur_cb]= sensorComboBox
 
     spur_sensor_name = spur_cb.getSelectedItem()
     if spur_sensor_name != None:
         spur_sensor = sensors.getSensor(str(spur_sensor_name))
-        update_comment("#IS_spur_sensor#", spur_sensor)
+        update_comment("#IS_headshunt_sensor#", spur_sensor)
     else:
-        delete_comment("#IS_spur_sensor#")
+        delete_comment("#IS_headshunt_sensor#")
 
     siding1_name = sensor1_cb.getSelectedItem()
     if siding1_name != None:
@@ -567,14 +567,14 @@ def OK_action(event):
         
     #**********************************************************************
 
-    [spur_block_cb, mid_block_cb, block1_cb, block2_cb, block3_cb]= blockComboBox
+    [ block1_cb, block2_cb, block3_cb, mid_block_cb, spur_block_cb]= blockComboBox
 
     spur_block_name = spur_block_cb.getSelectedItem()
     if spur_block_name != None:
         spur_block = blocks.getBlock(str(spur_block_name))
-        update_block_comment("#IS_block_spur#", spur_block)
+        update_block_comment("#IS_block_headshunt#", spur_block)
     else:
-        delete_block_comment("#IS_block_spur#")
+        delete_block_comment("#IS_block_headshunt#")
 
     mid_block_name = mid_block_cb.getSelectedItem()
     if mid_block_name != None:
@@ -692,7 +692,10 @@ def set_sensors_in_sidings(msg):
         else:
             msg = "siding " + str(i+1)+ "   "
         print "hi"
+        # s2 = [str(s) for s in sensors.getNamedBeanSet() if not s.getSystemName().startswith("IY:AUTO")]
+        # print len(s2), s2
         sensorComboBox.append(jmri.swing.NamedBeanComboBox(sensors))
+        # sensorComboBox.append(JComboBox(s2))
         sensorComboBox[i].setAllowNull(True)
         sensorComboBox[i].setPreferredSize(Dimension(300, 20));
         siding = "#IS_"+msg.replace(" ","")+"_sensor#"
@@ -727,7 +730,8 @@ def set_sensors_in_sidings(msg):
             msg = "mid           "
         else:
             msg = "siding " + str(i+1) + "   "
-        blockComboBox.append(jmri.swing.NamedBeanComboBox(jmri.InstanceManager.getNullableDefault(jmri.BlockManager)))
+        # blockComboBox.append(jmri.swing.NamedBeanComboBox(jmri.InstanceManager.getNullableDefault(jmri.BlockManager)))
+        blockComboBox.append(jmri.swing.NamedBeanComboBox(blocks))
         blockComboBox[i].setAllowNull(True)
         blockComboBox[i].setPreferredSize(Dimension(300, 20));
         siding = "#IS_block_"+msg.replace(" ","")+"#"
