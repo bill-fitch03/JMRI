@@ -909,6 +909,9 @@ public class LayoutTurntableView extends LayoutTrackView {
         float trackWidth = 2.F;
         float halfTrackWidth = trackWidth / 2.f;
 
+        if (true){
+            return;
+        }
         // draw ray tracks
         for (int j = 0; j < getNumberRays(); j++) {
             boolean main = false;
