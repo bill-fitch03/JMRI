@@ -63,6 +63,7 @@ public class LayoutTurntable extends LayoutTrack {
     private boolean dispatcherManaged = false;
     private boolean turnoutControlled = false;
     private double radius = 25.0;
+    private boolean mainline = false;
     private int lastKnownIndex = -1;
 
     private int signalIconPlacement = 0; // 0: Do Not Place, 1: Left, 2: Right
@@ -72,7 +73,7 @@ public class LayoutTurntable extends LayoutTrack {
 
     // persistent instance variables (saved between sessions)
 
-    // temporary: this is referenced directly from LayoutTurntable, which
+    // temporary: this is referenced direjmri.jmrit.display.layoutEditor.LayoutTurntablectly from LayoutTurntable, which
     // should be using _functional_ accessors here.
     public final List<RayTrack> rayTrackList = new ArrayList<>(); // list of Ray Track objects
 
@@ -590,9 +591,20 @@ public class LayoutTurntable extends LayoutTrack {
 
     @Override
     public boolean isMainline() {
-        return false;
+        return mainline;
     }
 
+    /**
+     * Set the mainline status of the turntable bridge itself.
+     * @param main true if the bridge is mainline, false otherwise.
+     */
+    public void setMainline(boolean main) {
+        if (mainline != main) {
+            mainline = main;
+            models.redrawPanel();
+            models.setDirty();
+        }
+    }
 
     public String tLayoutBlockName = "";
     public String tExitSignalMastName = "";

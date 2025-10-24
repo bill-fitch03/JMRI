@@ -832,7 +832,12 @@ public class LayoutTurntableView extends LayoutTrackView {
         float trackWidth = 2.F;
         double diameter = 2.f * getRadius();
 
-        if (isBlock && isMain) {
+        // Only draw in the appropriate pass (mainline or sideline)
+        if (isMain != turntable.isMainline()) {
+            return;
+        }
+
+        if (isBlock) {
             double radius2 = Math.max(getRadius() / 4.f, trackWidth * 2);
             double diameter2 = radius2 * 2.f;
             Stroke stroke = g2.getStroke();
@@ -873,10 +878,11 @@ public class LayoutTurntableView extends LayoutTrackView {
             if (main == isMain) {
                 g2.draw(new Line2D.Double(pt1, pt2));
             }
+            g2.draw(new Line2D.Double(pt1, pt2));
             // getPosition() will return -1 if no ray is selected (all turnouts are closed).
             // In that case, we do not draw the bridge.
             int currentPositionIndex = (getPosition() != -1) ? getRayIndex(getPosition()) : -1;
-            if (isMain && isTurnoutControlled() && (currentPositionIndex == j)) {
+            if (isTurnoutControlled() && (currentPositionIndex == j)) {
                 if (isBlock) {
                     LayoutBlock lb = getLayoutBlock();
                     if (lb != null) {
