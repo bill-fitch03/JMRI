@@ -840,15 +840,23 @@ public class LayoutTurntableView extends LayoutTrackView {
         if (isBlock) {
             double radius2 = Math.max(getRadius() / 4.f, trackWidth * 2);
             double diameter2 = radius2 * 2.f;
-            Stroke stroke = g2.getStroke();
-            Color color = g2.getColor();
-            // draw turntable circle - default track color, side track width
-            g2.setStroke(new BasicStroke(trackWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
+            Stroke originalStroke = g2.getStroke();
+            Color originalColor = g2.getColor();
+
+            // Set color for both circles to the default track color
             g2.setColor(layoutEditor.getDefaultTrackColorColor());
+
+            // Draw outer circle (the pit) with a thinner stroke to make it appear "faint"
+            g2.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
             g2.draw(new Ellipse2D.Double(getCoordsCenter().getX() - getRadius(), getCoordsCenter().getY() - getRadius(), diameter, diameter));
+
+            // Draw inner circle with the standard track width
+            g2.setStroke(new BasicStroke(trackWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
             g2.draw(new Ellipse2D.Double(getCoordsCenter().getX() - radius2, getCoordsCenter().getY() - radius2, diameter2, diameter2));
-            g2.setStroke(stroke);
-            g2.setColor(color);
+
+            // Restore original stroke and color for subsequent drawing
+            g2.setStroke(originalStroke);
+            g2.setColor(originalColor);
         }
 
         // draw ray tracks
