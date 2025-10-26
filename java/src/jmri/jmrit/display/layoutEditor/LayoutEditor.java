@@ -3578,9 +3578,9 @@ final public class LayoutEditor extends PanelEditor implements MouseWheelListene
      * @return the coordinates for the connection type of the specified object
      */
     @Nonnull
-    public Point2D getCoords(@Nonnull LayoutTrack track, HitPointType connectionType) {
+    public Point2D getCoords(LayoutTrack track, HitPointType connectionType) {
+        if (track == null) {log.warn ("track {} HitPointType {}", track, connectionType);}
         LayoutTrack trk = Objects.requireNonNull(track);
-
         return getCoords(getLayoutTrackView(trk), connectionType);
     }
 
@@ -4175,7 +4175,8 @@ final public class LayoutEditor extends PanelEditor implements MouseWheelListene
                     case LEVEL_XING_CENTER:
                     case SLIP_LEFT:
                     case SLIP_RIGHT:
-                    case TURNTABLE_CENTER: {
+            case TURNTABLE_CENTER:
+            case TRAVERSER_CENTER: {
                         amendSelectionGroup(foundTrack);
                         break;
                     }
