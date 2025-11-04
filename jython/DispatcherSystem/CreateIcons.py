@@ -708,7 +708,8 @@ class processPanels(jmri.jmrit.automat.AbstractAutomaton):
     # **************************************************
     def generateSML(self):
         layoutblocks.enableAdvancedRouting(True)
-        # print "Generating Signal Mast Logic"
+        layoutblocks.setRoutingStabilised()
+        print "Generating Signal Mast Logic"
         smlManager = jmri.InstanceManager.getDefault(jmri.SignalMastLogicManager)
         smlManager.automaticallyDiscoverSignallingPairs()
         # print "Signal Mast Logic Generated"
@@ -717,11 +718,11 @@ class processPanels(jmri.jmrit.automat.AbstractAutomaton):
     # generate sections
     # **************************************************
     def generateSections(self):
-        # print "Generating Sections"
+        print "Generating Sections"
         smlManager = jmri.InstanceManager.getDefault(jmri.SignalMastLogicManager)
         # generate sections()
         smlManager.generateSection()
-        # print "Sections Generated"
+        print "Sections Generated"
         self.show_progress(80)
         # print "+++++++++++++++++++++++ generate block sections ++++++++++++++++++++++++++++++"
         sections.generateBlockSections()
