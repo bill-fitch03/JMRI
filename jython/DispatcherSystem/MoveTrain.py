@@ -315,6 +315,16 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
             if self.logLevel > 0: print strindex + "previous_block == next_block", previous_block == next_block, "so changing direction"
             transit_instruction = "change"
 
+        # check if current block is a turntable
+        for panel in jmri.util.JmriJFrame.getFrameList():
+            if isinstance(panel, jmri.jmrit.display.layoutEditor.LayoutEditor):
+                for turntable in panel.getLayoutTurntables():
+                    if turntable.getLayoutBlock() is not None:
+                        if (turntable.getLayoutBlock().getBlock() == current_block) and (current_block != next_block):
+                            if self.logLevel > 0: print strindex + "current_block is a turntable, so changing direction"
+                            transit_instruction = "change"
+                            break
+
         LayoutBlockManager=jmri.InstanceManager.getDefault(jmri.jmrit.display.layoutEditor.LayoutBlockManager)
         current_layout_block = LayoutBlockManager.getLayoutBlock(current_block)
 
@@ -785,6 +795,7 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
         self.trainInfo.setStopBySpeedProfileAdjust(stopbyspeedprofileadjust)
 
         # setMinReliableOperatingSpeed
+        # percentage = 0.0
         percentage = 10.5
         self.trainInfo.setMinReliableOperatingSpeed(percentage/100)
 
@@ -2524,12 +2535,12 @@ class MyTableModel (DefaultTableModel):
                 current_speed_factor_str = engine.getComment()
                 train = trains[train_name]
                 result = train["direction"]
-                print "train[direction] loading to put in dropdown", result
+                # print "train[direction] loading to put in dropdown", result
                 if result == "forward":
                     train_direction = "reverse"
                 else:
                     train_direction = "forward"
-                print "train", train, train_direction
+                # print "train", train, train_direction
             items_to_put_in_dropdown.append([train_name,block_name,train_direction, False, train_length, current_speed_factor ])
 
         # print "items_to_put_in_dropdown", items_to_put_in_dropdown

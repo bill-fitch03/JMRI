@@ -54,6 +54,7 @@ import jmri.jmrit.display.layoutEditor.LayoutDoubleXOver;
 import jmri.jmrit.display.layoutEditor.LayoutEditor;
 import jmri.jmrit.display.layoutEditor.LayoutTrackExpectedState;
 import jmri.jmrit.display.layoutEditor.LayoutTurnout;
+import jmri.jmrit.display.layoutEditor.LayoutTurntable;
 import jmri.jmrit.display.layoutEditor.LevelXing;
 import jmri.jmrit.roster.Roster;
 import jmri.jmrit.roster.RosterEntry;
@@ -2177,10 +2178,7 @@ public class DispatcherFrame extends jmri.util.JmriJFrame implements InstanceMan
             }
         }
 
-        as = allocateSection(at, s, ar.getSectionSeqNumber(), nextSection, nextSectionSeqNo, ar.getSectionDirection());
-        if (as != null) {
-            as.setAutoTurnoutsResponse(expectedTurnOutStates);
-        }
+        as = allocateSection(at, s, ar.getSectionSeqNumber(), nextSection, nextSectionSeqNo, ar.getSectionDirection(), expectedTurnOutStates);
 
         if (intermediateSections.size() > 1 && mastHeldAtSection != s) {
             Section tmpcur = nextSection;
@@ -2198,7 +2196,9 @@ public class DispatcherFrame extends jmri.util.JmriJFrame implements InstanceMan
                     break;
                 }
                 Section se = intermediateSections.get(i);
-                as = allocateSection(at, tmpcur, tmpSeqNo, se, tmpNxtSeqNo, ar.getSectionDirection());
+                 // intermediateSections always have signal mast protection
+                 // so we can pass null as turnout settings.
+                as = allocateSection(at, tmpcur, tmpSeqNo, se, tmpNxtSeqNo, ar.getSectionDirection(), null);
                 tmpcur = se;
                 if (at.isAllocationReversed()) {
                     tmpSeqNo -= 1;
@@ -2234,7 +2234,8 @@ public class DispatcherFrame extends jmri.util.JmriJFrame implements InstanceMan
         return as;
     }
 
-    private AllocatedSection allocateSection(ActiveTrain at, Section s, int seqNum, Section nextSection, int nextSectionSeqNo, int direction) {
+    private AllocatedSection allocateSection(ActiveTrain at, Section s, int seqNum, Section nextSection,
+            int nextSectionSeqNo, int direction, List<LayoutTrackExpectedState<LayoutTurnout>> expectedTurnOutStates) {
         AllocatedSection as = null;
         // allocate the section
         as = new AllocatedSection(s, at, seqNum, nextSection, nextSectionSeqNo);
@@ -2273,6 +2274,7 @@ public class DispatcherFrame extends jmri.util.JmriJFrame implements InstanceMan
                 }
             }
         }
+        as.setAutoTurnoutsResponse(expectedTurnOutStates);
         at.addAllocatedSection(as);
         allocatedSections.add(as);
         log.debug("{}: Allocated section [{}]", at.getTrainName(), as.getSection().getDisplayName(USERSYS));
@@ -2709,6 +2711,20 @@ public class DispatcherFrame extends jmri.util.JmriJFrame implements InstanceMan
                             if (foundOne) {
                                 // check if the next section is allocated to the same train and has been entered
                                 ActiveTrain at = as.getActiveTrain();
+                                    // Do not release a turntable section automatically
+                                    LayoutEditor le = getLayoutEditor();
+                                    if (le != null) {
+                                        for (LayoutTurntable tt : le.getLayoutTurntables()) {
+                                            if (tt.getLayoutBlock() != null && as.getSection().getBlockList().contains(tt.getLayoutBlock().getBlock())) {
+                                                foundOne = false;
+                                            }
+                                            for (int r = 0; r < tt.getNumberRays(); r++) {
+                                                if (tt.getRayConnectOrdered(r) != null && tt.getRayConnectOrdered(r).getLayoutBlock() != null && as.getSection().getBlockList().contains(tt.getRayConnectOrdered(r).getLayoutBlock().getBlock())) {
+                                                    foundOne = false;
+                                                }
+                                            }
+                                        }
+                                    }
                                 Section ns = as.getNextSection();
                                 AllocatedSection nas = null;
                                 for (int k = 0; (k < allocatedSections.size()) && (nas == null); k++) {
@@ -3007,7 +3023,7 @@ public class DispatcherFrame extends jmri.util.JmriJFrame implements InstanceMan
         }
     }
 
-    protected AutoTurnouts getAutoTurnoutsHelper () {
+    public AutoTurnouts getAutoTurnoutsHelper () {
         return autoTurnouts;
     }
 

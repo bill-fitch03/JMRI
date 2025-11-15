@@ -832,31 +832,18 @@ public class LayoutTurntableView extends LayoutTrackView {
         float trackWidth = 2.F;
         double diameter = 2.f * getRadius();
 
-        // Only draw in the appropriate pass (mainline or sideline)
-        if (isMain != turntable.isMainline()) {
-            return;
-        }
-
-        if (isBlock) {
+        if (isBlock && isMain) {
             double radius2 = Math.max(getRadius() / 4.f, trackWidth * 2);
             double diameter2 = radius2 * 2.f;
-            Stroke originalStroke = g2.getStroke();
-            Color originalColor = g2.getColor();
-
-            // Set color for both circles to the default track color
-            g2.setColor(layoutEditor.getDefaultTrackColorColor());
-
-            // Draw outer circle (the pit) with a thinner stroke to make it appear "faint"
-            g2.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
-            g2.draw(new Ellipse2D.Double(getCoordsCenter().getX() - getRadius(), getCoordsCenter().getY() - getRadius(), diameter, diameter));
-
-            // Draw inner circle with the standard track width
+            Stroke stroke = g2.getStroke();
+            Color color = g2.getColor();
+            // draw turntable circle - default track color, side track width
             g2.setStroke(new BasicStroke(trackWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
+            g2.setColor(layoutEditor.getDefaultTrackColorColor());
+            g2.draw(new Ellipse2D.Double(getCoordsCenter().getX() - getRadius(), getCoordsCenter().getY() - getRadius(), diameter, diameter));
             g2.draw(new Ellipse2D.Double(getCoordsCenter().getX() - radius2, getCoordsCenter().getY() - radius2, diameter2, diameter2));
-
-            // Restore original stroke and color for subsequent drawing
-            g2.setStroke(originalStroke);
-            g2.setColor(originalColor);
+            g2.setStroke(stroke);
+            g2.setColor(color);
         }
 
         // draw ray tracks
@@ -886,11 +873,17 @@ public class LayoutTurntableView extends LayoutTrackView {
             if (main == isMain) {
                 g2.draw(new Line2D.Double(pt1, pt2));
             }
-            g2.draw(new Line2D.Double(pt1, pt2));
-            // getPosition() will return -1 if no ray is selected (all turnouts are closed).
-            // In that case, we do not draw the bridge.
-            int currentPositionIndex = (getPosition() != -1) ? getRayIndex(getPosition()) : -1;
-            if (isTurnoutControlled() && (currentPositionIndex == j)) {
+
+            int knownPosition = getPosition();
+            int commandedPosition = turntable.getCommandedPosition();
+
+            // Don't draw the bridge if animating and position is changing
+            if (layoutEditor.isAnimating() && isTurnoutControlled() && knownPosition != commandedPosition) {
+                continue;
+            }
+
+            int currentPositionIndex = (knownPosition != -1) ? getRayIndex(knownPosition) : -1;
+            if (isMain && isTurnoutControlled() && (currentPositionIndex == j) ) {
                 if (isBlock) {
                     LayoutBlock lb = getLayoutBlock();
                     if (lb != null) {
@@ -923,9 +916,6 @@ public class LayoutTurntableView extends LayoutTrackView {
         float trackWidth = 2.F;
         float halfTrackWidth = trackWidth / 2.f;
 
-        if (true){
-            return;
-        }
         // draw ray tracks
         for (int j = 0; j < getNumberRays(); j++) {
             boolean main = false;
