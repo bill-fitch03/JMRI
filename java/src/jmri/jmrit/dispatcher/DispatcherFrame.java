@@ -2711,20 +2711,33 @@ public class DispatcherFrame extends jmri.util.JmriJFrame implements InstanceMan
                             if (foundOne) {
                                 // check if the next section is allocated to the same train and has been entered
                                 ActiveTrain at = as.getActiveTrain();
-                                    // Do not release a turntable section automatically
-                                    LayoutEditor le = getLayoutEditor();
-                                    if (le != null) {
-                                        for (LayoutTurntable tt : le.getLayoutTurntables()) {
-                                            if (tt.getLayoutBlock() != null && as.getSection().getBlockList().contains(tt.getLayoutBlock().getBlock())) {
+                                // Do not release a traverser section automatically
+                                LayoutEditor le = getLayoutEditor();
+                                if (le != null) {
+                                    for (jmri.jmrit.display.layoutEditor.LayoutTraverser tr : le.getLayoutTraversers()) {
+                                        if (tr.getLayoutBlock() != null && as.getSection().getBlockList().contains(tr.getLayoutBlock().getBlock())) {
+                                            foundOne = false;
+                                        }
+                                        for (int r = 0; r < tr.getNumberSlots(); r++) {
+                                            if (tr.getSlotConnectOrdered(r) != null && tr.getSlotConnectOrdered(r).getLayoutBlock() != null && as.getSection().getBlockList().contains(tr.getSlotConnectOrdered(r).getLayoutBlock().getBlock())) {
                                                 foundOne = false;
-                                            }
-                                            for (int r = 0; r < tt.getNumberRays(); r++) {
-                                                if (tt.getRayConnectOrdered(r) != null && tt.getRayConnectOrdered(r).getLayoutBlock() != null && as.getSection().getBlockList().contains(tt.getRayConnectOrdered(r).getLayoutBlock().getBlock())) {
-                                                    foundOne = false;
-                                                }
                                             }
                                         }
                                     }
+                                }
+                                // Do not release a turntable section automatically
+                                if (le != null) {
+                                    for (LayoutTurntable tt : le.getLayoutTurntables()) {
+                                        if (tt.getLayoutBlock() != null && as.getSection().getBlockList().contains(tt.getLayoutBlock().getBlock())) {
+                                            foundOne = false;
+                                        }
+                                        for (int r = 0; r < tt.getNumberRays(); r++) {
+                                            if (tt.getRayConnectOrdered(r) != null && tt.getRayConnectOrdered(r).getLayoutBlock() != null && as.getSection().getBlockList().contains(tt.getRayConnectOrdered(r).getLayoutBlock().getBlock())) {
+                                                foundOne = false;
+                                            }
+                                        }
+                                    }
+                                }
                                 Section ns = as.getNextSection();
                                 AllocatedSection nas = null;
                                 for (int k = 0; (k < allocatedSections.size()) && (nas == null); k++) {

@@ -48,6 +48,7 @@ public class LayoutTrackDrawingOptions {
         blockDefaultColor = ltdo.getBlockDefaultColor();
         blockOccupiedColor = ltdo.getBlockOccupiedColor();
         blockAlternativeColor = ltdo.getBlockAlternativeColor();
+        traverserColor = ltdo.getTraverserColor();
 
     }
 
@@ -338,6 +339,18 @@ public class LayoutTrackDrawingOptions {
         JmriColorChooser.addRecentColor(val);
     }
 
+    private Color traverserColor = Color.CYAN;
+
+    @Nonnull
+    public Color getTraverserColor() {
+        return traverserColor;
+    }
+
+    public void setTraverserColor(@Nonnull Color val) {
+        traverserColor = val;
+        JmriColorChooser.addRecentColor(val);
+    }
+
     //
     public boolean equalsAllButName(@Nonnull LayoutTrackDrawingOptions ltdo) {
         boolean result = true;  // assume success (optimist!)
@@ -449,6 +462,9 @@ public class LayoutTrackDrawingOptions {
                     if (!blockAlternativeColor.equals(ltdo.getBlockAlternativeColor())) {
                         break;
                     }
+                    if (!traverserColor.equals(ltdo.getTraverserColor())) {
+                        break;
+                    }
                     result = true;
                 } while (false);
             }
@@ -495,6 +511,7 @@ public class LayoutTrackDrawingOptions {
         result = (37 * result) + (blockDefaultColor == null ? 0 : blockDefaultColor.hashCode());
         result = (37 * result) + (blockOccupiedColor == null ? 0 : blockOccupiedColor.hashCode());
         result = (37 * result) + (blockAlternativeColor == null ? 0 : blockAlternativeColor.hashCode());
+        result = (37 * result) + (traverserColor == null ? 0 : traverserColor.hashCode());
 
         return result;
     }

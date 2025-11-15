@@ -4,6 +4,7 @@ import jmri.Block;
 import jmri.Turnout;
 import jmri.jmrit.display.layoutEditor.LayoutEditor;
 import jmri.jmrit.display.layoutEditor.LayoutTurntable;
+import jmri.jmrit.display.layoutEditor.LayoutTraverser;
 import jmri.jmrit.display.layoutEditor.LayoutTrackExpectedState;
 import jmri.jmrit.display.layoutEditor.LayoutTurnout;
 import jmri.InstanceManager;
@@ -72,6 +73,45 @@ public class AutoTurnoutsHelper {
         return null; // No turntable issue, or already aligned.
     }
 
+    /**
+     * Checks if a traverser needs to be aligned for the given path and returns
+     * the LayoutTrackExpectedState for the controlling turnout if it's not
+     * already aligned.
+     *
+     * @param as The AllocatedSection the train is currently in.
+     * @param currentBlock The current block the train is in.
+     * @param previousBlock The previous block the train was in.
+     * @param nextBlock The next block the train is heading towards.
+     * @return A {@code LayoutTrackExpectedState<LayoutTurnout>} if a traverser turnout needs to be aligned,
+     *         otherwise {@code null}.
+     */
+    @CheckForNull
+    public LayoutTrackExpectedState<LayoutTurnout> checkTraverserAlignment(
+            AllocatedSection as, Block currentBlock, Block previousBlock, Block nextBlock) {
+
+        LayoutEditor layoutEditor = InstanceManager.getDefault(DispatcherFrame.class).getLayoutEditor();
+        if (layoutEditor == null) {
+            log.debug("No LayoutEditor associated with dispatcher, skipping traverser check.");
+            return null;
+        }
+
+        for (LayoutTraverser tr : layoutEditor.getLayoutTraversers()) {
+            if (tr.isTraverserBoundary(currentBlock, nextBlock) || tr.isSlotBlock(currentBlock) || tr.isSlotBlock(nextBlock)) {
+                if (tr.isTurnoutControlled()) {
+                    List<LayoutTrackExpectedState<LayoutTurnout>> expectedStates =
+                        tr.getTurnoutList(currentBlock, previousBlock, nextBlock);
+
+                    if (!expectedStates.isEmpty()) {
+                        LayoutTrackExpectedState<LayoutTurnout> state = expectedStates.get(0);
+                        if (state.getObject().getTurnout() != null && state.getObject().getTurnout().getKnownState() != state.getExpectedState()) {
+                            return state;
+                        }
+                    }
+                }
+            }
+        }
+        return null; // No traverser issue, or already aligned.
+    }
     /**
      * Checks if a turntable needs to be aligned for the given path.
      *

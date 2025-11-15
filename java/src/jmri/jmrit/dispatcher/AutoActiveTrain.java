@@ -532,7 +532,7 @@ public class AutoActiveTrain implements ThrottleListener {
     private Turnout _turntableTurnoutNeeded = null; // The turnout controlling the turntable ray that needs to be aligned
     private PropertyChangeListener _turntableTurnoutListener = null; // Listener for the turntable turnout
 
-    private boolean checkTurntable(AllocatedSection as) {
+    private boolean checkTurntablesAndTraversers(AllocatedSection as) {
         if (as != null) {
             if (_turntableTurnoutNeeded != null && _turntableTurnoutListener != null) {
                 _turntableTurnoutNeeded.removePropertyChangeListener("KnownState", _turntableTurnoutListener);
@@ -544,6 +544,12 @@ public class AutoActiveTrain implements ThrottleListener {
             // to AutoTurnoutsHelper, similar to how checkTurn delegates to checkStateAgainstList.
             LayoutTrackExpectedState<LayoutTurnout> turntableExpectedState =
                 _dispatcher.getAutoTurnoutsHelper().checkTurntableAlignment(as, _currentBlock, _previousBlock, _nextBlock);
+
+            // Check for traverser alignment as well
+            if (turntableExpectedState == null) {
+                turntableExpectedState = _dispatcher.getAutoTurnoutsHelper().checkTraverserAlignment( // NOI18N
+                        as, _currentBlock, _previousBlock, _nextBlock);
+            }
 
             if (turntableExpectedState != null) {
                 Turnout turnout = turntableExpectedState.getObject().getTurnout();
@@ -1063,7 +1069,7 @@ public class AutoActiveTrain implements ThrottleListener {
         }
         // only bother to check signal if the next allocation is ours.
         // and the turnouts have been set
-        if (checkAllocationsAhead() && checkTurn(getAllocatedSectionForSection(_nextSection)) && checkTurntable(getAllocatedSectionForSection(_nextSection))) {
+        if (checkAllocationsAhead() && checkTurn(getAllocatedSectionForSection(_nextSection)) && checkTurntablesAndTraversers(getAllocatedSectionForSection(_nextSection))) {
             if (_activeTrain.getSignalType() == DispatcherFrame.SIGNALHEAD
                     && _controllingSignal != null) {
                 setSpeedBySignalHead();
