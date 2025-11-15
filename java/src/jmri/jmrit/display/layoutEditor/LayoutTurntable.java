@@ -64,6 +64,7 @@ public class LayoutTurntable extends LayoutTrack {
     private boolean turnoutControlled = false;
     private double radius = 25.0;
     private int knownIndex = -1;
+    private boolean mainline = false;
     private int commandedIndex = -1;
 
     private int signalIconPlacement = 0; // 0: Do Not Place, 1: Left, 2: Right
@@ -591,9 +592,20 @@ public class LayoutTurntable extends LayoutTrack {
 
     @Override
     public boolean isMainline() {
-        return false;
+        return mainline;
     }
 
+    /**
+     * Set the mainline status of the turntable bridge itself.
+     * @param main true if the bridge is mainline, false otherwise.
+     */
+    public void setMainline(boolean main) {
+        if (mainline != main) {
+            mainline = main;
+            models.redrawPanel();
+            models.setDirty();
+        }
+    }
 
     public String tLayoutBlockName = "";
     public String tExitSignalMastName = "";

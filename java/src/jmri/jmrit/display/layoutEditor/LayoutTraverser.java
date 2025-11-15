@@ -1375,53 +1375,6 @@ public class LayoutTraverser extends LayoutTrack {
         return Bundle.getMessage("TypeName_Traverser");
     }
 
-    /**
-     * Get the number of slots on traverser.
-     *
-     * @return the number of slots
-     */
-    public int getNumberSlots() {
-        return slotTrackList.size();
-    }
-
-    /**
-     * Get the connection for the slot at the index in the slotTrackList.
-     *
-     * @param i the index in the slotTrackList
-     * @return the connection for the slot at that index in the slotTrackList or null
-     */
-    @CheckForNull
-    public TrackSegment getSlotConnectOrdered(int i) {
-        TrackSegment result = null;
-
-        if (i < slotTrackList.size()) {
-            SlotTrack st = slotTrackList.get(i);
-            if (st != null) {
-                result = st.getConnect();
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Checks if the given block is one of the slot blocks for this traverser.
-     * @param block The Block to check.
-     * @return true if it is a block for one of the slots.
-     */
-    public boolean isSlotBlock(Block block) {
-        if (block == null) {
-            return false;
-        }
-        for (SlotTrack slot : slotTrackList) {
-            TrackSegment ts = slot.getConnect();
-            if (ts != null && ts.getLayoutBlock() != null && block.equals(ts.getLayoutBlock().getBlock())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
     private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(LayoutTraverser.class);
     
 
