@@ -324,6 +324,20 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
                             if self.logLevel > 0: print strindex + "current_block is a turntable, so changing direction"
                             transit_instruction = "change"
                             break
+                for traverser in panel.getLayoutTraversers():
+                    if traverser.getLayoutBlock() is not None:
+                        if (traverser.getLayoutBlock().getBlock() == current_block) and (current_block != next_block):
+                            # It's a traverser. Check if entry and exit are on the same side.
+                            previous_slot = traverser.getSlotForBlock(previous_block)
+                            next_slot = traverser.getSlotForBlock(next_block)
+                            if previous_slot != -1 and next_slot != -1:
+                                # Both previous and next blocks are connected to traverser slots.
+                                # Check if they are on the same side relative to the traverser's center.
+                                # A simple way is to see if their offsets from center have the same sign.
+                                if (traverser.getSlot(previous_slot).getOffset() * traverser.getSlot(next_slot).getOffset()) >= 0:
+                                    if self.logLevel > 0: print strindex + "current_block is a traverser and entry/exit are on same side, so changing direction"
+                                    transit_instruction = "change"
+                                    break
 
         LayoutBlockManager=jmri.InstanceManager.getDefault(jmri.jmrit.display.layoutEditor.LayoutBlockManager)
         current_layout_block = LayoutBlockManager.getLayoutBlock(current_block)

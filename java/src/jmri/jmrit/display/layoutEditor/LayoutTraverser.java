@@ -729,9 +729,8 @@ public class LayoutTraverser extends LayoutTrack {
 
     private void recalculateDimensions() {
         int numPairs = getNumberSlots() / 2;
-        log.warn("Math.max(0f,2f*(getDeckWidth()/2f-slotOffset/2f)) {}", Math.max(0f,getDeckWidth()/2f-slotOffset));
-        double newLength = (numPairs > 0) ?  (getDeckWidth()/4f + (slotOffset * numPairs)) : slotOffset;
-        setDeckLength(newLength);
+        // The deck length is the span of all the slots plus a bit of padding at each end.
+        deckLength = (numPairs > 1) ? ((numPairs - 1) * slotOffset) + (2 * (slotOffset / 2)) : slotOffset;
     }
 
     public void moveSlotPairUp(int pairIndex) {

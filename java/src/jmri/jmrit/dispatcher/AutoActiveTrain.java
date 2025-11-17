@@ -816,6 +816,32 @@ public class AutoActiveTrain implements ThrottleListener {
         setForward(!getRunInReverse());
     }
 
+    private Block getTurntableOrTraverserBlockIfStartingThere(Block startBlock) {
+        jmri.jmrit.display.layoutEditor.LayoutEditor layoutEditor = _dispatcher.getLayoutEditor();
+        if (layoutEditor != null) {
+            // Check if starting on a turntable ray track
+            for (jmri.jmrit.display.layoutEditor.LayoutTurntable turntable : layoutEditor.getLayoutTurntables()) {
+                if (turntable.isRayBlock(startBlock)) {
+                    // The starting block is a ray track of a turntable. The next block is the turntable itself.
+                    if (turntable.getLayoutBlock() != null) {
+                        return turntable.getLayoutBlock().getBlock();
+                    }
+                }
+            }
+            // Check if starting on a traverser slot track
+            for (jmri.jmrit.display.layoutEditor.LayoutTraverser traverser : layoutEditor.getLayoutTraversers()) {
+                if (traverser.isSlotBlock(startBlock)) {
+                    // The starting block is a slot track of a traverser. The next block is the traverser itself.
+                    if (traverser.getLayoutBlock() != null) {
+                        return traverser.getLayoutBlock().getBlock();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+
     private void addAllocatedSection(AllocatedSection as) {
         if (!_initialized) {
             // this is first allocated section, get things started
@@ -826,13 +852,19 @@ public class AutoActiveTrain implements ThrottleListener {
                 // starting Block is in this allocated section - find next Block
                 setNewCurrentSection(as);
                 _nextBlock = getNextBlock(_currentBlock, as);
-            } else if (as.getSection().connectsToBlock(_currentBlock)) {
-                // starting Block is connected to a Block in this allocated section
-                EntryPoint ep = as.getSection().getEntryPointFromBlock(_currentBlock, as.getDirection());
-                if (ep != null) {
-                    _nextBlock = ep.getBlock();
-                } else {
-                    log.error("failure to get entry point to Transit from Block {}", _currentBlock.getDisplayName(USERSYS));
+            } else {
+                // Check if starting on a turntable or traverser approach track
+                Block specialNextBlock = getTurntableOrTraverserBlockIfStartingThere(_currentBlock);
+                if (specialNextBlock != null) {
+                    _nextBlock = specialNextBlock;
+                } else if (as.getSection().connectsToBlock(_currentBlock)) {
+                    // starting Block is connected to a Block in this allocated section
+                    EntryPoint ep = as.getSection().getEntryPointFromBlock(_currentBlock, as.getDirection());
+                    if (ep != null) {
+                        _nextBlock = ep.getBlock();
+                    } else {
+                        log.error("failure to get entry point to Transit from Block {}", _currentBlock.getDisplayName(USERSYS));
+                    }
                 }
             }
             if (_nextBlock != null) {

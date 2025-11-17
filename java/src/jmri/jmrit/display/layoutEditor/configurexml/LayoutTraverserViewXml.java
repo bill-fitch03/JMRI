@@ -65,7 +65,7 @@ public class LayoutTraverserViewXml extends LayoutTrackViewXml {
             element.setAttribute("signalIconPlacement", "" + lt.getSignalIconPlacement());
             element.setAttribute("dispatcherManaged", "yes");
         }
-        element.setAttribute("class", "jmri.jmrit.display.layoutEditor.configurexml.LayoutTraverserViewXml");
+    element.setAttribute("class", "jmri.jmrit.display.layoutEditor.configurexml.LayoutTraverserXml");
         // add slot tracks
         for (int i = 0; i < lt.getNumberSlots(); i++) {
             Element rElem = new Element("slot");

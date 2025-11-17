@@ -8491,21 +8491,6 @@ final public class LayoutEditor extends PanelEditor implements MouseWheelListene
 
     @Override
     public @Nonnull
-    List<LayoutTurntable> getLayoutTurntables() {
-        return getLayoutTracksOfClass(LayoutTurntable.class)
-                .map(LayoutTurntable.class::cast)
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    public @Nonnull
-    List<LayoutTurntableView> getLayoutTurntableViews() {
-        return getLayoutTrackViewsOfClass(LayoutTurntableView.class)
-                .map(LayoutTurntableView.class::cast)
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    @Override
-    public @Nonnull
     List<LayoutTraverser> getLayoutTraversers() {
         return getLayoutTracksOfClass(LayoutTraverser.class)
                 .map(LayoutTraverser.class::cast)
@@ -8516,6 +8501,21 @@ final public class LayoutEditor extends PanelEditor implements MouseWheelListene
     List<LayoutTraverserView> getLayoutTraverserViews() {
         return getLayoutTrackViewsOfClass(LayoutTraverserView.class)
                 .map(LayoutTraverserView.class::cast)
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    @Override
+    public @Nonnull
+    List<LayoutTurntable> getLayoutTurntables() {
+        return getLayoutTracksOfClass(LayoutTurntable.class)
+                .map(LayoutTurntable.class::cast)
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public @Nonnull
+    List<LayoutTurntableView> getLayoutTurntableViews() {
+        return getLayoutTrackViewsOfClass(LayoutTurntableView.class)
+                .map(LayoutTurntableView.class::cast)
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 

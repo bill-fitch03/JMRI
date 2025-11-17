@@ -12,7 +12,7 @@ from javax.swing import JButton, JFrame, JPanel, JProgressBar, \
 
 class CreateTransits(jmri.jmrit.automat.AbstractAutomaton):
 
-    logLevel = 0
+    logLevel = 2
 
     def __init__(self):
         pass
@@ -101,7 +101,7 @@ class CreateTransits(jmri.jmrit.automat.AbstractAutomaton):
         self.logLevel = 0
         self.get_signal_mast_lists(layoutPanels)
         print;print
-        self.logLevel = 1
+        self.logLevel = 2
 
         # self.displayMessage("created signal mast list")
 

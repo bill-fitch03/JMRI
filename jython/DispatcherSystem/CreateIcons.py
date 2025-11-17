@@ -111,18 +111,18 @@ class processPanels(jmri.jmrit.automat.AbstractAutomaton):
             self.generateSML()
             print "E"
             self.show_progress(60)
-            self.generateSections()   # if it fails need a better fail message
-            print "F"
-            # self.tryme(self.generateSections, "Cannot generate Sections: Signal Masts not set up correctly. Needs to be fixed before using Dispatcher System.")
-            self.show_progress(80)
-            self.tryme(self.addLogix, "Cannot generate startup Logix: Contact Developer")
-            print "G"
-            self.addIcons()
-            print "H"
-            self.tryme(self.retrieveForwardStoppingSensors, "Cannot retrieve Stopping Sensors: Contact Developer")
-            self.setVersionNo()
-            self.stop_all_threads()
-            self.end_show_progress()
+            # self.generateSections()   # if it fails need a better fail message
+            # print "F"
+            # # self.tryme(self.generateSections, "Cannot generate Sections: Signal Masts not set up correctly. Needs to be fixed before using Dispatcher System.")
+            # self.show_progress(80)
+            # self.tryme(self.addLogix, "Cannot generate startup Logix: Contact Developer")
+            # print "G"
+            # self.addIcons()
+            # print "H"
+            # self.tryme(self.retrieveForwardStoppingSensors, "Cannot retrieve Stopping Sensors: Contact Developer")
+            # self.setVersionNo()
+            # self.stop_all_threads()
+            # self.end_show_progress()
 
         else:
             self.result = "Failure"
