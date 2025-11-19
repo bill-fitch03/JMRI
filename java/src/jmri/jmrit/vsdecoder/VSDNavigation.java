@@ -866,6 +866,60 @@ public class VSDNavigation {
         return result;
     }
 
+    boolean navigateLayoutTraverser() {
+        boolean result = false;
+        if (use_blocks && !((LayoutTraverser) d.getLayoutTrack()).getBlockName().equals(VSDecoderManager.instance().currentBlock.get(d).getUserName())) {
+            // we are not in the block
+            d.setDistance(0);
+            return false;
+        }
+
+        double distanceOnTrack = d.getDistance() + d.distanceOnTrack;
+        d.nextLayoutTrack = null;
+
+        LayoutTraverser traverser = (LayoutTraverser) d.getLayoutTrack();
+        LayoutTraverserView ttv = d.getModels().getLayoutTraverserView(traverser);
+        int num_slots = traverser.getNumberSlots();
+        log.debug("traverser name: {}, number slots: {}", ttv.getName(), num_slots);
+
+        Point2D pStart = null;
+        Point2D pEnd = null;
+
+        if (num_slots < 1) {
+            log.warn("A traverser must have at least one slot");
+        } else if (traverser.getPosition() < 0) {
+            log.warn("Traverser position not set");
+        } else {
+            int currentPosition = traverser.getPosition();
+            int entrySlot = -1;
+            for (int i = 0; i < num_slots; i++) {
+                if (traverser.getSlotConnectOrdered(i) == d.getLastTrack()) {
+                    entrySlot = i;
+                    break;
+                }
+            }
+
+            if (entrySlot != -1) {
+                // Find the corresponding exit slot. Traverser slots are in pairs.
+                int exitSlot = (entrySlot % 2 == 0) ? entrySlot + 1 : entrySlot - 1;
+                if (exitSlot >= 0 && exitSlot < num_slots) {
+                    // Check if the deck is aligned to the exit slot
+                    if (traverser.getSlotIndex(exitSlot) == currentPosition) {
+                        pStart = ttv.getSlotCoordsIndexed(entrySlot);
+                        pEnd = ttv.getSlotCoordsIndexed(exitSlot);
+                        d.nextLayoutTrack = traverser.getSlotConnectOrdered(exitSlot);
+                    } else {
+                        log.warn("Traverser not aligned for exit. Current pos: {}, required for exit slot {}: {}", currentPosition, exitSlot, traverser.getSlotIndex(exitSlot));
+                    }
+                }
+            }
+        }
+
+        // The rest of the logic is identical to navigateLayoutTurntable, so we can reuse it.
+        // This assumes pStart, pEnd, and d.nextLayoutTrack have been set correctly.
+        return navigateComplexTrack(pStart, pEnd, distanceOnTrack);
+    }
+
     private boolean navigate(List<Point2D> points, @CheckForNull LayoutTrack nextLayoutTrack) {
         boolean result = false;
         double distanceOnTrack = d.getDistance() + d.distanceOnTrack;
@@ -912,4 +966,45 @@ public class VSDNavigation {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(VSDNavigation.class);
 
+    /**
+     * Common navigation logic for complex tracks like Turntables and Traversers.
+     *
+     * @param pStart          The starting point of movement on the component.
+     * @param pEnd            The ending point of movement on the component.
+     * @param distanceOnTrack The total distance to travel.
+     * @return True if navigation should continue to the next track piece.
+     */
+    private boolean navigateComplexTrack(Point2D pStart, Point2D pEnd, double distanceOnTrack) {
+        boolean result = false;
+        if (d.nextLayoutTrack != null) {
+            d.setReturnLastTrack(d.nextLayoutTrack);
+            d.setReturnTrack(d.getLayoutTrack());
+        }
+
+        if (pStart != null && pEnd != null) {
+            double distance = MathUtil.distance(pStart, pEnd);
+            d.setReturnDistance(distance);
+            if (distanceOnTrack < distance) {
+                double ratio = distanceOnTrack / distance;
+                d.setLocation(MathUtil.lerp(pStart, pEnd, ratio));
+                d.setDirectionRAD((Math.PI / 2) - MathUtil.computeAngleRAD(pEnd, pStart));
+                d.setDistance(0);
+            } else {
+                d.setDistance(distanceOnTrack - distance);
+                result = true; // Move to next track
+            }
+        } else {
+            log.info("Complex track caused a stop. Correct position or change direction.");
+            d.setDistance(0);
+            d.setReturnDistance(0);
+            d.setReturnTrack(d.getLastTrack());
+        }
+        d.distanceOnTrack = d.getDistance();
+
+        if (result) {
+            d.setLayoutTrack(d.nextLayoutTrack);
+            d.setLastTrack(d.getLayoutTrack());
+        }
+        return result;
+    }
 }

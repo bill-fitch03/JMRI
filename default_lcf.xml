@@ -120,6 +120,7 @@
         <!-- <Logger name="jmri.jmrit.operations" level="DEBUG"/> -->
 
 <!--       <Logger name="jmri.jmrit.display.layoutEditor.LayoutBlockManager" level="DEBUG"/>-->
+<!--      <Logger name="jmri.managers.DefaultSignalMastLogicManage" level="DEBUG"/>-->
 
     </Loggers>
 </Configuration>

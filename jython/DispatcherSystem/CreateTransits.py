@@ -101,7 +101,7 @@ class CreateTransits(jmri.jmrit.automat.AbstractAutomaton):
         self.logLevel = 0
         self.get_signal_mast_lists(layoutPanels)
         print;print
-        self.logLevel = 2
+        self.logLevel = 0
 
         # self.displayMessage("created signal mast list")
 
@@ -281,8 +281,8 @@ class CreateTransits(jmri.jmrit.automat.AbstractAutomaton):
                 signal_mast_list_for_panel=lbctools.getBeansInPath(layout_block_list,panel,signal_mast_class)
                 #signal_mast_list_for_panel=lbctools.getBeansInPath(layout_block_list,None,signal_mast_class)
 
-                msg = "signal_mast_list_for_panel",[sm.getUserName() for sm in signal_mast_list_for_panel],"layout_block_list", layout_block_list_name,
-                self.displayMessage(msg)
+                # msg = "signal_mast_list_for_panel",[sm.getUserName() for sm in signal_mast_list_for_panel],"layout_block_list", layout_block_list_name,
+                # self.displayMessage(msg)
                 if self.logLevel > 0: print "signal_mast_list_for_panel",[sm.getUserName() for sm in signal_mast_list_for_panel]
                 if signal_mast_list_for_panel == [] :
                     if self.logLevel > 0: print "continuing"

@@ -76,12 +76,12 @@ def CreateIcons_action(event):
     result = processPanels()    # result is "Success" or "Failure"
     # stage2
 
-    # if str(result) == "Success":
-    #     CreateTransits()
-    # else:
-    #     title = "Error in Routine"
-    #     msg = "Not creating Transits as failure in earlier routine"
-    #     Query().displayMessage(msg,title)
+    if str(result) == "Success":
+        CreateTransits()
+    else:
+        title = "Error in Routine"
+        msg = "Not creating Transits as failure in earlier routine"
+        Query().displayMessage(msg,title)
 
     # print "Created Transits"
 
@@ -230,7 +230,7 @@ def CreateTransits():
     global dpg
     dpg = DisplayProgress()
 
-    #print "about to run CreateTransits"
+    print "about to run CreateTransits"
     ct = CreateTransits()
 
     ct.run_transits()

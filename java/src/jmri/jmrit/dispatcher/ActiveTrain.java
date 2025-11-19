@@ -840,7 +840,10 @@ public class ActiveTrain implements PropertyChangeProvider {
                 }
                 as.getSection().suppressNameUpdate(true);
             }
+            log.info("Train: {} - Dispatcher setting alternate color for section: {}", getTrainName(), as.getSectionName());
+            log.info("mDispatcher.getExtraColorForAllocated() {}", mDispatcher.getExtraColorForAllocated());
             if (mDispatcher.getExtraColorForAllocated()) {
+                log.info("setAlternateColorFromActiveBlock");
                 as.getSection().setAlternateColorFromActiveBlock(true);
             }
             // notify anyone interested

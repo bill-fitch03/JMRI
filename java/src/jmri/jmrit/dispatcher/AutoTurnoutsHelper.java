@@ -133,6 +133,26 @@ public class AutoTurnoutsHelper {
     }
 
     /**
+     * Checks if a traverser needs to be aligned for the given path.
+     *
+     * @param as The AllocatedSection the train is currently in.
+     * @param nextBlock The next block the train is heading towards.
+     * @return LayoutTraverser if a traverser turnout needs to be controlled,
+     *         otherwise null.
+     */
+    @CheckForNull
+    public LayoutTraverser checkTraverser(AllocatedSection as, Block nextBlock) {
+        // This method's implementation is left as an exercise for the reader.
+        // The implementation should check if the train is approaching a traverser
+        // and if the traverser needs to be aligned for the train to proceed.
+        // If so, it should return the LayoutTraverser object. Otherwise, it
+        // should return null.
+
+        //This is a stub implementation that always returns null.
+        return null;
+    }
+
+    /**
      * Check that all turnouts in a section have finished setting
      * for passage. If not listens on first bad turnout
      * and rechecks when set.

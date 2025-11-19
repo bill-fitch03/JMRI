@@ -110,7 +110,7 @@ class StationGraph(jmri.jmrit.automat.AbstractAutomaton):
 
     def setup_graph_edges(self):
         global le
-        self.logLevel = 1
+        self.logLevel = 0
         if self.logLevel > 0: print "*****************************"
         if self.logLevel > 0: print "****setup_graph_edges********"
         if self.logLevel > 0: print "*****************************"
@@ -533,7 +533,7 @@ class StationGraph(jmri.jmrit.automat.AbstractAutomaton):
 
     def Sufficient_signal_masts_in_edge(self, e):
         global g
-        self.logLevel = 2
+        self.logLevel = 0
         EditorManager = jmri.InstanceManager.getDefault(jmri.jmrit.display.EditorManager)
         layoutPanels = []
         for panel in EditorManager.getList():

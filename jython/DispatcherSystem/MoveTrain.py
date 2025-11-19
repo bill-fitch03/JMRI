@@ -329,12 +329,14 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
                         if (traverser.getLayoutBlock().getBlock() == current_block) and (current_block != next_block):
                             # It's a traverser. Check if entry and exit are on the same side.
                             previous_slot = traverser.getSlotForBlock(previous_block)
+                            print "previous_slot", previous_slot, traverser.getSlotOffsetValue(previous_slot)
                             next_slot = traverser.getSlotForBlock(next_block)
+                            print "next_slot", next_slot, traverser.getSlotOffsetValue(next_slot)
                             if previous_slot != -1 and next_slot != -1:
-                                # Both previous and next blocks are connected to traverser slots.
+                                # Both previous and next blocks are the indices of the slots in the traverser.
                                 # Check if they are on the same side relative to the traverser's center.
-                                # A simple way is to see if their offsets from center have the same sign.
-                                if (traverser.getSlot(previous_slot).getOffset() * traverser.getSlot(next_slot).getOffset()) >= 0:
+                                # A simple way is to see if they are both odd or both even
+                                if (previous_slot % 2 == next_slot % 2):
                                     if self.logLevel > 0: print strindex + "current_block is a traverser and entry/exit are on same side, so changing direction"
                                     transit_instruction = "change"
                                     break

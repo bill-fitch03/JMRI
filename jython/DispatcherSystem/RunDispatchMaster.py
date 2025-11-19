@@ -178,6 +178,16 @@ class RunDispatcherMaster(jmri.jmrit.automat.AbstractAutomaton ):
                 for turntable in list(editor.getLayoutTurntables()):
                     layout_block = turntable.getLayoutBlock()
                     if layout_block is not None and layout_block.getUserName() is not None:
+                        stopping_points_set.add(layout_block.getUserName())        
+
+        # Third, automatically add blocks associated with LayoutTraversers
+        editorManager = jmri.InstanceManager.getDefault(jmri.jmrit.display.EditorManager)
+        for editor in editorManager.getAll():
+            if isinstance(editor, jmri.jmrit.display.layoutEditor.LayoutEditor):
+                # The returned object is a Java Set, which needs to be converted to a list for safe iteration in Jython
+                for traverser in list(editor.getLayoutTraversers()):
+                    layout_block = traverser.getLayoutBlock()
+                    if layout_block is not None and layout_block.getUserName() is not None:
                         stopping_points_set.add(layout_block.getUserName())
 
         return sorted(list(stopping_points_set))

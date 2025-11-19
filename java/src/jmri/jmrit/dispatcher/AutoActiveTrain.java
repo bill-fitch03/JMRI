@@ -543,12 +543,12 @@ public class AutoActiveTrain implements ThrottleListener {
             // Delegate the complex logic of finding the turntable and its required turnout state
             // to AutoTurnoutsHelper, similar to how checkTurn delegates to checkStateAgainstList.
             LayoutTrackExpectedState<LayoutTurnout> turntableExpectedState =
-                _dispatcher.getAutoTurnoutsHelper().checkTurntableAlignment(as, _currentBlock, _previousBlock, _nextBlock);
+                    _dispatcher.getAutoTurnoutsHelper().checkTurntableAlignment(as, _currentBlock, _previousBlock, _nextBlock);
 
             // Check for traverser alignment as well
-            if (turntableExpectedState == null) {
-                turntableExpectedState = _dispatcher.getAutoTurnoutsHelper().checkTraverserAlignment( // NOI18N
-                        as, _currentBlock, _previousBlock, _nextBlock);
+            if (turntableExpectedState == null) { turntableExpectedState =
+                    _dispatcher.getAutoTurnoutsHelper().checkTraverserAlignment(as, _currentBlock, _previousBlock, _nextBlock);
+
             }
 
             if (turntableExpectedState != null) {
