@@ -230,6 +230,16 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
                     stored_transit_instruction = "no_change"
                 if self.logLevel > 0: print strindex + "new transit_direction " + transit_direction
 
+
+                # store the current edge for next move and also so we can get the correct direction label
+                #store current edge information in train
+                train["edge"] = e
+
+                # Trigger the BlockChangeListener to update the label for the new dispatch
+                # even though the train might not have left the block yet.
+                print "trigger block change for train", train_name, "block", current_block
+                self.trigger_block_change_listener(current_block, train_name)
+
                 if self.logLevel > 0: print strindex + "+++++++++++++++++++++++++++"
                 if self.logLevel > 0: print strindex + "calling self.move iterno", iter
                 result = self.move(e, transit_direction, transit_instruction,  train_name, mode, self.index)
@@ -243,7 +253,7 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
 
                 if self.logLevel > 0: print strindex + "returned from self.move, result = ", result
                 if result == False:
-                    # we will repeat, sot put everything back to original state
+                    # we will repeat, so put everything back to original state
                     if stored_transit_instruction == "change":
                         if self.logLevel > 0: print strindex + "reverting changed direction iterno", iter
                         if train["direction"] == "forward":
@@ -282,9 +292,7 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
                 if self.logLevel > 0: print strindex + "called self.move iterno", iter
                 if self.logLevel > 0: print strindex + "++++++++++++++++++++++++++++++++++"
 
-            # store the current edge for next move
-            #store current edge information in train
-            train["edge"] = e
+
             train["penultimate_block_name"] = e.getItem("penultimate_block_name")
             # count the paths in
             count_path +=1
@@ -370,6 +378,15 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
         previous_direction_from = transit_direction
         return [transit_direction, transit_instruction]
 
+    def trigger_block_change_listener(self, block, train_name):
+        # Force a property change event on the block's "value" (the train name).
+        # Even if the value is the same, firing the property change will cause
+        # listeners (like RunDispatchMaster) to re-evaluate and update labels.
+        # We set it to None and then back to train_name to ensure a change is detected if needed,
+        # but often just firePropertyChange is enough if the listener is robust.
+        block.setValue(None)
+        block.setValue(train_name)
+
     def check_train_in_start_block(self, train_to_move, blockName):
         # print "check_train_in_start_block"
         # print "checking " , train_to_move, " in " , blockName
@@ -389,7 +406,6 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
                 else:
                     blockName = "train not in any block"
                     #as the block
-                    block.setValue(train_to_move)
                     # print "train", train_to_move, "reset in" , blockName
                     return True
         else:
@@ -470,7 +486,7 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
             self.waitMsec(1000)  # wait for train to stop dispatching we don't want to start another train before it has stopped properly
             if self.train_is_dispatching(train_name, index):
                 self.wait_till_train_stops_dispatching(train_name, index)
-                if self.logLevel > 0: print strindex + "waited till train stops dispatching, trying again with new position"
+                if self.logLevel > -1: print strindex + "waited till train stops dispatching, trying again with new position"
                 # print strindex + "train is dispatching, trying again with new position"
                 # self.waitMsec(500)
                 return False
@@ -486,17 +502,22 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
         #     print strindex +"waited_till_train_stops_dispatching not calling dispatch"
         #     return False
 
-        if self.logLevel > 0: print strindex +"calling dispatch"
+        if self.logLevel > 0: print strindex + "calling dispatch"
         if self.logLevel > 0: print strindex + "trains_dispatched", trains_dispatched
 
         result = self.call_dispatch(e, direction, train_name, mode, index)
+
         if self.logLevel > 0: print strindex +"exit call_dispatch" , result
         if self.logLevel > 0: print strindex + "trains_dispatched", trains_dispatched
         self.set_sensor(sensor_move_name, "inactive")
         if result == True:
+            result2 = self.wait_till_train_is_dispatching(train_name, index)
+            if result2 == False: return False
             # print strindex +"result from calling move is True!!", train, from_name, to_name
             # Wait for the Active Trains List to not have the train we wish to start in it
+            print "X"
             self.wait_till_train_stops_dispatching(train_name, index)
+            print "Y"
             self.set_sensor(sensor_move_name, "inactive")
             self.report_train_state(train_name)  # just for debugging
             if self.logLevel > 0: print strindex +("+++++ sensor " + sensor_move_name + " inactive")
@@ -524,21 +545,46 @@ class MoveTrain(jmri.jmrit.automat.AbstractAutomaton):
         else:
             return False
 
+    def wait_till_train_is_dispatching(self, train_name, index = 0):
+        strindex = str(index) + " " * 10   #make debugging easier to understand by indenting
+        print strindex + "wait_till_train_starts_dispatching", train_name
+        i = 0
+        while(not self.train_is_dispatching(train_name, index)):
+            self.waitMsec(500)
+            i = i + 1
+            if i == 50: return False
+        if self.logLevel > -1: print (strindex + "+++++ train " + train_name + " started dispatching" )
+        return True
+
     def wait_till_train_stops_dispatching(self, train_name, index = 0):
         strindex = str(index) + " " * 10   #make debugging easier to understand by indenting
-        # print strindex + "wait_till_train_stops_dispatching", train_name
-        DF = jmri.InstanceManager.getDefault(jmri.jmrit.dispatcher.DispatcherFrame)
-        java_active_trains_list = DF.getActiveTrainsList()
-        java_active_trains_Arraylist= java.util.ArrayList(java_active_trains_list)
-        active_train_names_list = [str(t.getTrainName()) for t in java_active_trains_Arraylist]
-        while train_name in active_train_names_list:
+        print strindex + "wait_till_train_stops_dispatching", train_name
+        i = 0
+        while(self.train_is_dispatching(train_name, index)):
+            # print "A", i
             self.waitMsec(500)
-            # print strindex + train_name + "in active train list"
-            java_active_trains_list = DF.getActiveTrainsList()
-            java_active_trains_Arraylist= java.util.ArrayList(java_active_trains_list)
-            active_train_names_list = [str(t.getTrainName()) for t in java_active_trains_Arraylist]
-        if self.logLevel > 0: print (strindex + "+++++ train " + train_name + " stopped dispatching" )
-        return
+            # print "A1", i
+            i = i + 1
+            # print "B", i
+        if self.logLevel > -1: print (strindex + "+++++ train " + train_name + " stopped dispatching" )
+        return True
+
+
+    # def wait_till_train_stops_dispatching(self, train_name, index = 0):
+    #     strindex = str(index) + " " * 10   #make debugging easier to understand by indenting
+    #     # print strindex + "wait_till_train_stops_dispatching", train_name
+    #     DF = jmri.InstanceManager.getDefault(jmri.jmrit.dispatcher.DispatcherFrame)
+    #     java_active_trains_list = DF.getActiveTrainsList()
+    #     java_active_trains_Arraylist= java.util.ArrayList(java_active_trains_list)
+    #     active_train_names_list = [str(t.getTrainName()) for t in java_active_trains_Arraylist]
+    #     while train_name in active_train_names_list:
+    #         self.waitMsec(500)
+    #         # print strindex + train_name + "in active train list"
+    #         java_active_trains_list = DF.getActiveTrainsList()
+    #         java_active_trains_Arraylist= java.util.ArrayList(java_active_trains_list)
+    #         active_train_names_list = [str(t.getTrainName()) for t in java_active_trains_Arraylist]
+    #     if self.logLevel > 0: print (strindex + "+++++ train " + train_name + " stopped dispatching" )
+    #     return
 
     def speech_required_flag(self):
         # print "speech_required_flag"
@@ -1178,6 +1224,7 @@ class NewTrainMaster(jmri.jmrit.automat.AbstractAutomaton):
             # action = self.od.List(msg, actions)
             # if action == "setup 1 train":
             station_block_name, new_train_name = self.check_new_train_in_siding()
+            current_block = blocks.getBlock(station_block_name)
             if self.logLevel > 0: print "station_block_name",station_block_name, "existing train name", new_train_name
             if station_block_name != None:
                 # take actions for new train
@@ -1216,6 +1263,10 @@ class NewTrainMaster(jmri.jmrit.automat.AbstractAutomaton):
                                         self.set_blockcontents(new_section_name, new_train_name)
                                         self.set_length(new_train_name)
                                         self.set_speed_factor(new_train_name)
+                            # Trigger the BlockChangeListener to update the label for the new dispatch
+                            print "trigger block change for train", new_train_name, "block", current_block
+                            self.trigger_block_change_listener(current_block, new_train_name)
+                            return True
                     else:
                         if self.logLevel > 0 : print "!!!!5"
                         trains_to_choose = self.get_non_allocated_trains()
@@ -1228,6 +1279,10 @@ class NewTrainMaster(jmri.jmrit.automat.AbstractAutomaton):
                         self.set_blockcontents(station_block_name, new_train_name)
                         self.set_length(new_train_name)
                         self.set_speed_factor(new_train_name)
+                        # Trigger the BlockChangeListener to update the label for the new dispatch
+                        print "trigger block change for train", new_train_name, "block", current_block
+                        self.trigger_block_change_listener(current_block, new_train_name)
+                        return True
             else:
                 if self.logLevel > 0: print "about to show message no new train in siding"
                 msg = self.get_all_trains_msg()
@@ -1250,6 +1305,23 @@ class NewTrainMaster(jmri.jmrit.automat.AbstractAutomaton):
         elif action == "check/swap train direction":
             self.check_swap_train_direction()
         return True
+
+    def trigger_block_change_listener(self, block, train_name):
+        # Force a property change event on the block's "value" (the train name).
+        # Using setValue(None) then setValue(train_name) causes two events and a temporary
+        # empty state. Using firePropertyChange avoids this.
+        # block.firePropertyChange("value", None, train_name)
+        # try:
+        #     block.firePropertyChange("value", None, train_name)
+        # except Exception:
+        #     # Fallback if firePropertyChange fails
+        #     block.setValue(None)
+        #     block.setValue(train_name)
+        print "here1"
+        block.setValue(None)
+        print "here", train_name
+        block.setValue(train_name)
+
 
     def check_swap_train_direction(self):
         trains_to_choose = self.get_allocated_trains()
@@ -1341,7 +1413,6 @@ class NewTrainMaster(jmri.jmrit.automat.AbstractAutomaton):
         if new_train_name is None: return
 
         title = "Set the length of the engine/train"
-        # msg = str(fred)
         request = "Change"
         while request == "Change":
             [engine,current_length] = self.get_train_length(new_train_name)
@@ -1640,7 +1711,7 @@ class NewTrainMaster(jmri.jmrit.automat.AbstractAutomaton):
 
         # 4) add to allocated train list
         # if str(train_name) not in trains_allocated:
-        #     trains_allocated.append(str(train_name))
+        #     trains_allocated.append(str(FFGFFFFFtrain_name))
 
         [engine,current_length] = self.get_train_length(train_name)  #get the engine name
         engine.setLength(str(train_length))    # save the length provided in the parameter
@@ -1697,9 +1768,10 @@ class NewTrainMaster(jmri.jmrit.automat.AbstractAutomaton):
             penultimate_layout_block.setUseExtraColor(True)
         penultimate_layout_block.setUseExtraColor(True)
         [train_direction, result] = self.set_train_direction(station_block_name, in_siding)
+        directionOfTravel = station_block.getNeighbourDirection(penultimate_layout_block);
         penultimate_layout_block.setUseExtraColor(saved_state)
 
-        return [edge, train_direction, result]
+        return [edge, train_direction,  result]
 
     def get_penultimate_layout_block(self, station_block_name):
         # get the last traversed edge to the edge of the station_block
@@ -2324,6 +2396,10 @@ class createandshowGUI(TableModelListener):
                 self.super.set_length0(train_name)
                 self.super.set_speed_factor0(train_name)
 
+                current_block = blocks.getBlock(block_name)
+                # # Trigger the BlockChangeListener to update the label for the new dispatch
+                # print "trigger block change for train", train_name, "block", current_block
+                self.super.trigger_block_change_listener(current_block, train_name)
                 self.model.data.pop(row)
 
         # print "end save action"

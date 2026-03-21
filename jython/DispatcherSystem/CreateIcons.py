@@ -8,9 +8,7 @@ from java.awt.geom import Point2D
 from java.awt import Color
 
 
-# from jython.DispatcherSystem.Startup import OptionDialog
-
-
+# jmri.jmrit.display.PositionableLabel
 # IS:DSCT:nnn  Control sensors
 # IS:DSMT:nnn  Move TO sensors
 # IS:DSMP:nnn  Move Progress sensors
@@ -33,7 +31,7 @@ from java.awt import Color
 #   Sensors
 #   Labels
 #   Block content labels
-
+direction_labels_map = {}
 
 class processPanels(jmri.jmrit.automat.AbstractAutomaton):
 
@@ -86,12 +84,78 @@ class processPanels(jmri.jmrit.automat.AbstractAutomaton):
 
 
 
+
+    # def setup_direction_labels_and_listeners(self):
+    #     self.logLevel = 1
+    #     editorManager = jmri.InstanceManager.getDefault(jmri.jmrit.display.EditorManager)
+    #     for editor in editorManager.getAll():
+    #         print "Z"
+    #         if isinstance(editor, jmri.jmrit.display.layoutEditor.LayoutEditor) and editor.getTitle() != 'Dispatcher System':
+    #             print "Y"
+    #             # Build the direction_labels_map from existing PositionableLabels on the panel
+    #             # This assumes CreateIcons.py has already run and the panel was saved.
+    #             for item in editor.getContents():
+    #                 if isinstance(item, jmri.jmrit.display.PositionableLabel):
+    #                     print "Item found. Class: {}, ID: {}, Text: {}".format(item.getClasses(), item.getId(), item.getText() if hasattr(item, 'getText') else 'No Text')
+    #                 if isinstance(item, jmri.jmrit.display.PositionableLabel) and item.getId() and item.getId().startswith("PL_DIRECTION_"):
+    #                     block_name = item.getId().replace("PL_DIRECTION_", "").replace("_", " ")
+    #                     direction_labels_map[block_name] = item
+    #                     if self.logLevel > 0: print "RunDispatchMaster: Found existing direction label for block:", block_name
+    #
+    #             if self.logLevel > 0:
+    #                 print "Finished scanning editor contents. Map size: {}".format(len(direction_labels_map))
+    #
+    #             if not direction_labels_map:
+    #                 if self.logLevel > 0: print "RunDispatchMaster: No direction labels found on the panel. Did CreateIcons.py run and was the panel saved?"
+    #                 return
+    #
+    #             # Now, add listeners to the Blocks
+    #             for block in blocks.getNamedBeanSet():
+    #                 block_name = block.getUserName()
+    #                 if block_name:
+    #                     # Construct the expected label name
+    #                     expected_label_name = "PL_DIRECTION_" + block_name.replace(" ", "_")
+    #
+    #                     # Find this label in the editor contents
+    #                     found_label = None
+    #                     for item in editor.getContents():
+    #                         if isinstance(item, jmri.jmrit.display.PositionableLabel):
+    #                             print ("item", item)
+    #                             if item.getId() is not None:
+    #                                 if self.logLevel > 0: print("item.getId()", item.getId())
+    #                         if isinstance(item, jmri.jmrit.display.PositionableLabel) and item.getId() == expected_label_name:
+    #                             found_label = item
+    #                             break
+    #
+    #                     # if found_label:
+    #                     #     # Log when a listener is set up for SidingMiddlleLHS
+    #                     #     # if block_name == "SidingMiddlleLHS":
+    #                     #     print "DEBUG: Setting up listener for SidingMiddlleLHS. Found label:", found_label.getId()
+    #                     #
+    #                     #     direction_labels_map[block_name] = found_label
+    #                     #     listener = BlockChangeListener(block, direction_labels_map)
+    #                     #     block.addPropertyChangeListener("value", listener)
+    #                     #     self.block_listeners[block_name] = listener
+    #                     # else:
+    #                     #     # if block_name == "SidingMiddlleLHS":
+    #                     #     print "DEBUG: Did NOT find direction label for (expected name: {}).".format(expected_label_name)
+    #                     #
+    #
+    #                     if found_label:
+    #                         # Found it! Attach listener
+    #                         direction_labels_map[block_name] = found_label
+    #                         listener = BlockChangeListener(block, direction_labels_map)
+    #                         block.addPropertyChangeListener("value", listener)
+    #                         self.block_listeners[block_name] = listener
+    #     self.logLevel = 0
+
     def __init__(self):
         self.result = "Success"    #value is returned in __str__ and set to "Failure" in self.tryme()
         self.define_DisplayProgress_global()
         if self.perform_initial_checks():
             self.show_progress(0)
             self.tryme(self.saveForwardStoppingSensors, "Cannot save Forward Stopping Sensors: Contact Developer")
+            self.removeIconsAndLabels()
             self.tryme(self.removeIconsAndLabels, "Cannot remove Icons And Labels: Contact Developer")
             self.tryme(self.removeLogix, "Cannot remove startup Logix: Contact Developer")
             self.tryme(self.removeTransits, "Cannot remove Transits: Contact Developer")
@@ -117,9 +181,12 @@ class processPanels(jmri.jmrit.automat.AbstractAutomaton):
             self.show_progress(80)
             self.tryme(self.addLogix, "Cannot generate startup Logix: Contact Developer")
             # print "G"
-            self.addIcons()
+            self.addIconsAndLabels()
             self.tryme(self.retrieveForwardStoppingSensors, "Cannot retrieve Stopping Sensors: Contact Developer")
             self.setVersionNo()
+            # RunDispatchMaster = jmri.util.FileUtil.getExternalFilename('program:jython/DispatcherSystem/RunDispatchMaster.py')
+            # exec(open(RunDispatchMaster).read())
+            # self.setup_direction_labels_and_listeners()
             self.stop_all_threads()
             self.end_show_progress()
 
@@ -509,11 +576,10 @@ class processPanels(jmri.jmrit.automat.AbstractAutomaton):
 
     def removeBlockContentIcons(self, panel):
         deleteList = []     # Prevent concurrent modification
-        icons = panel.getBlockContentsLabelList()
-        for icon in icons:
-            blk = icon.getBlock()
-            if blk is not None:
-                deleteList.append(icon)
+        # Iterate through all contents to find BlockContentsIcons
+        for item in panel.getContents():
+            if isinstance(item, jmri.jmrit.display.BlockContentsIcon):
+                deleteList.append(item)
 
         for item in deleteList:
             panel.removeFromContents(item)
@@ -522,14 +588,39 @@ class processPanels(jmri.jmrit.automat.AbstractAutomaton):
         labelText = []
         for control in self.controlSensors:
             labelText.append(control[2])
+        labelText.append("PL_DIRECTION_")     #all direction sensors
 
-        deleteList = []     # Prevent concurrent modification
-        for label in panel.getLabelImageList():
-            if label.isText():
-                if label.getText() in labelText:
-                    deleteList.append(label)
+        deleteList = []
+        if self.logLevel > 0:
+            print "removeLabels: Scanning panel '{}' for labels to remove.".format(panel.getTitle())
+
+        # Iterate over all contents to ensure we catch PositionableLabels by ID
+        for item in panel.getContents():
+            # Check if it's a PositionableLabel (or behaves like one)
+            if isinstance(item, jmri.jmrit.display.PositionableLabel):
+                should_delete = False
+                item_id = item.getId()
+                item_text = item.getText()
+
+                if item_text in labelText:
+                    should_delete = True
+                    if self.logLevel > 0:
+                        print "  - Found label with matching text '{}'. Marking for deletion.".format(item_text)
+                elif item_text == "direction":
+                    should_delete = True
+                    if self.logLevel > 0:
+                        print "  - Found label with text 'direction'. Marking for deletion."
+                elif item_id is not None and item_id.startswith("PL_DIRECTION_"):
+                    should_delete = True
+                    if self.logLevel > 0:
+                        print "  - Found direction label with ID '{}'. Marking for deletion.".format(item_id)
+                
+                if should_delete:
+                    deleteList.append(item)
 
         for item in deleteList:
+            if self.logLevel > 0:
+                print "removeLabels: Removing item with ID '{}' and text '{}' from panel '{}'.".format(item.getId(), item.getText(), panel.getTitle())
             panel.removeFromContents(item)
 
     def removeSensorIcons(self, panel):
@@ -751,12 +842,14 @@ class processPanels(jmri.jmrit.automat.AbstractAutomaton):
     # **************************************************
     # add Icons
     # **************************************************
-    def addIcons(self):
+    def addIconsAndLabels(self):
         for panel in self.editorManager.getAll(jmri.jmrit.display.layoutEditor.LayoutEditor):
             self.getBlockCenterPoints(panel)
 
             self.addStopIcons(panel)
             self.addOccupancyIconsAndLabels(panel)
+            # Add the train direction labels
+            self.addTrainDirectionLabels(panel)
         #add control icons in separate editor panel
         self.addControlIconsAndLabels()
 
@@ -1078,6 +1171,21 @@ class processPanels(jmri.jmrit.automat.AbstractAutomaton):
                     self.addBlockContentLabel(panel, block, x, y)
 
     # **************************************************
+    # train direction labels
+    # **************************************************
+    def addTrainDirectionLabels(self, panel):
+        for blockName in self.blockPoints.keys():
+            x = self.blockPoints[blockName].getX() + 10
+            y = max(5, self.blockPoints[blockName].getY() + 10 )
+            block = blocks.getBlock(blockName)
+            if block is not None:
+                sensor = block.getSensor()
+                if sensor is not None:
+                    x = int(x) - 120
+                    y = int(y) - 30 if int(y) > 35 else 5
+                    self.addDirectionLabel(panel, blockName, x, y)
+
+    # **************************************************
     # control sensor icons and label
     # **************************************************
     def addControlIconsAndLabels(self):
@@ -1194,6 +1302,50 @@ class processPanels(jmri.jmrit.automat.AbstractAutomaton):
         label.setBlock(block.getDisplayName())
         label.setLocation(int(x), int(y))
         panel.putItem(label)
+
+    def  addDirectionLabel(self, panel, block_name, x, y):
+        self.logLevel = 1
+        """
+        Adds a PositionableLabel to display train direction for a specific block.
+        """
+        if self.logLevel > 0: print "CreateIcons: Starting addDirectionLabel for block '{}'".format(block_name)
+        # Set a unique ID so we can find it later
+        unique_id = "PL_DIRECTION_" + block_name.replace(" ", "_")
+        print "unique_id", unique_id
+        # --- NEW DEBUGGING AND REMOVAL LOGIC ---
+        if self.logLevel > 0:
+            print "CreateIcons: Checking for existing label with ID: '{}' for block '{}' on panel '{}'".format(unique_id, block_name, panel.getTitle())
+
+        # Create the label with empty text initially
+        label = jmri.jmrit.display.PositionableLabel("", panel)
+
+
+        label.setPositionable(True)
+        label.setDisplayLevel(4) # Ensure it's on top
+
+        # Position the label (e.g., above the block center)
+        label.setLocation(int(x), int(y))
+        # label.setSize(label.getPreferredSize().width, label.getPreferredSize().height)
+        # Set a fixed width on the label to prevent auto-sizing issues with Unicode arrows.
+        # The default font metrics often miscalculate the width of these special characters.
+        label.setSize(110, label.getPreferredSize().height)
+
+        panel.putItem(label)
+        label.setId(unique_id)    # implicitly does panel.putItem(label)
+
+        if self.logLevel > 0:
+            print "CreateIcons: Successfully added new direction label '{}' for block '{}'".format(unique_id, block_name)
+        self.logLevel = 0 # Reset logLevel if it was temporarily set for debugging
+
+    # Helper function to find an item by its ID
+    def findItemById(self, panel, item_id):
+        # Since a direct lookup method is not available on LayoutEditor,
+        # we iterate through all components on the panel's content list.
+        for item in panel.getContents():
+            # Check if the item has an ID and if it matches the one we're looking for.
+            if hasattr(item, 'getId') and item.getId() == item_id:
+                return item
+        return None
 
     def saveForwardStoppingSensors(self):
         forward_stop_sensors = \

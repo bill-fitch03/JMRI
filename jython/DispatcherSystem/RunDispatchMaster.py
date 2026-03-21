@@ -29,6 +29,175 @@ exec(open(CreatePlatformPanel).read())
 global instanceList
 
 instanceList = []
+# Global dictionary to store references to the PositionableLabels
+# This will be built dynamically when RunDispatchMaster starts.
+direction_labels_map = {}
+
+class BlockChangeListener(PropertyChangeListener):
+    def __init__(self, block, label_map_ref):
+        # print "blockChangeListener"
+        self.block = block
+        self.label_map_ref = label_map_ref # Reference to the global direction_labels_map
+        self.logLevel = 1
+
+    def propertyChange(self, event):
+        if event.propertyName == "value": # Block value changes (train name)
+            print "block value change"
+            block_name = self.block.getUserName()
+            print "block_name", block_name, "block", self.block
+            layoutBlocks = jmri.InstanceManager.getDefault(jmri.jmrit.display.layoutEditor.LayoutBlockManager)
+            current_block = layoutBlocks.getLayoutBlock(block_name)
+            train_name = event.newValue # Get the new train name from the block value
+
+            if block_name not in self.label_map_ref:
+                if self.logLevel > 0: print "BlockChangeListener: No direction label found for block", block_name
+                return
+
+            label_to_update = self.label_map_ref[block_name]
+
+            if train_name and train_name != "none" and train_name != "":
+                # Check if the train is in the global 'trains' dictionary
+                # This is crucial for getting the correct direction ('forward'/'reverse')
+                if train_name in trains: # 'trains' global from MoveTrain.py
+                    # if "direction" in trains[train_name]:
+                    train = trains[train_name]
+                    print "train" , train
+                    if "direction" in train:
+                        train_direction = train["direction"]
+                        label_text = "FWD" if train_direction == "forward" else "REV"
+                        edge = train["edge"]
+                        # if "previous_edge" in trains[train_name]:
+                        #     previous_edge = trains[train_name]["previous_edge"]
+                        # else:
+                        #     previous_edge = edge
+                        #     # print "previous_edge set to edge"
+                        # previous_travel_direction = self.get_travel_direction(previous_edge)
+                        print "edge", edge
+                        travel_direction = self.get_travel_direction(edge, block_name)
+                        # if previous_travel_direction != travel_direction:
+                        #     travel_direction = previous_travel_direction
+                        #     print "set travel direction to previous"
+                        print "travel_direction =", travel_direction
+                        # label_text = label_text + " " + travel_direction
+                        label_text = travel_direction + " " + label_text
+                        # print "asdfg"
+                        if self.logLevel > 0: print "BlockChangeListener: Block {} occupied by {}. Direction: {}".format(block_name, train_name, train_direction)
+                    else:
+                        label_text = train_name # Display the train name itself
+                else:
+                    # Train not yet known to MoveTrain.py's 'trains' dict, or it's a temporary value
+                    label_text = train_name # Display the train name itself
+                    if self.logLevel > 0: print "BlockChangeListener: Block {} occupied by unknown train {}. Displaying name.".format(block_name, train_name)
+            else:
+                # Block value is empty, clear the label
+                label_text = ""
+                if self.logLevel > 0: print "BlockChangeListener: Block {} is now empty. Clearing label.".format(block_name)
+
+            # Update the label text on the EDT
+            def setTextOnLabel():
+                label_to_update.setText(label_text)
+                print "setting text to" , label_text
+                if label_to_update.getWidth() != 110:
+                    print "setting size to 110"
+                    label_to_update.setSize(110, label_to_update.getPreferredSize().height)
+            jmri.util.ThreadingUtil.runOnGUI(setTextOnLabel)
+
+    def get_travel_direction(self, edge, current_block_name):
+
+        layoutBlocks = jmri.InstanceManager.getDefault(jmri.jmrit.display.layoutEditor.LayoutBlockManager)
+
+        next_layout_block_name = self.next_block_in_path(edge)
+        print "next_layout_block_name", next_layout_block_name
+        if next_layout_block_name != "unknown":
+            next_layout_block = layoutBlocks.getLayoutBlock(next_layout_block_name)
+        else:
+            next_layout_block = None
+
+        penultimate_block_name = edge.getItem("penultimate_block_name")
+        print "penultimate_block_name", penultimate_block_name, "current_block_name", current_block_name
+        if penultimate_block_name != "":
+
+            penultimate_block = layoutBlocks.getLayoutBlock(penultimate_block_name)
+            # print "c"
+            last_block_name = edge.getItem("last_block_name")
+            print "last_block_name", last_block_name
+            if last_block_name != "":
+                last_block = layoutBlocks.getLayoutBlock(last_block_name)
+                if current_block_name != "":
+                    current_block = layoutBlocks.getLayoutBlock(current_block_name)
+                    # print "d"
+                    if next_layout_block_name == "unknown":
+                        travel_direction = int(penultimate_block.getNeighbourDirection(last_block))
+                        print "getting travel direction penultimate_block" , penultimate_block_name, "last_block", last_block_name
+                    else:
+                        print "getting travel direction current_block" , current_block_name, "last_block", last_block_name
+                        travel_direction = current_block.getNeighbourDirection(next_layout_block)
+                        print "travel_direction", travel_direction
+                        travel_direction = int(travel_direction)
+                    print "travel_direction", travel_direction
+        else:
+            travel_direction = "unknown"
+            print "travel_direction", travel_direction
+        # print "e"
+
+        directionName = ""
+        if travel_direction == jmri.Path.EAST:
+            directionName = u"\u2192"+"E"
+        elif travel_direction == jmri.Path.WEST:
+            directionName = u"\u2190"+"W"
+        elif travel_direction == jmri.Path.NORTH:
+            directionName = u"\u2191"+"N"
+        elif travel_direction == jmri.Path.SOUTH:
+            directionName = u"\u2193"+"S"
+        elif travel_direction == jmri.Path.NORTH_EAST:
+            directionName = u"\u2197"+"NE"
+        elif travel_direction == jmri.Path.NORTH_WEST:
+            directionName = u"\u2196"+"NW"
+        elif travel_direction == jmri.Path.SOUTH_EAST:
+            directionName = u"\u2198"+"SE"
+        elif travel_direction == jmri.Path.SOUTH_WEST:
+            directionName = u"\u2199"+"SW"
+        else:
+            directionName = "unknown"
+        print "directions E" , jmri.Path.EAST
+        print "directions W" , jmri.Path.WEST
+        print "directions N" , jmri.Path.NORTH
+        print "directions S" , jmri.Path.SOUTH
+        print "directions NE" , jmri.Path.NORTH_EAST
+        print "directions NW" , jmri.Path.NORTH_WEST
+        print "directions SE" , jmri.Path.SOUTH_EAST
+        print "directions SW" , jmri.Path.SOUTH_WEST
+        return directionName
+
+    def next_block_in_path(self, edge):
+        print "next_block_in_path"
+        layout_block_list = edge.getItem("path")
+        print "layout_block_list", layout_block_list
+        current_block_name = self.block.getUserName()
+        layoutBlocks = jmri.InstanceManager.getDefault(jmri.jmrit.display.layoutEditor.LayoutBlockManager)
+        current_layout_block = layoutBlocks.getLayoutBlock(current_block_name)
+        print "current_layout_block", current_layout_block, current_block_name
+        current_block_index = layout_block_list.index(current_layout_block)
+        print "current_block_index", current_block_index
+        if current_block_index + 1 > len(layout_block_list) - 1:
+            return "unknown"
+        next_layout_block = layout_block_list.get(current_block_index + 1)
+        print "next_layout_block", next_layout_block, next_layout_block.getUserName()
+        return next_layout_block.getUserName()
+        # try:
+        #     print "next_block_in_path"
+        #     layout_block_list = edge.getItem("path")
+        #     print "layout_block_list", layout_block_list
+        #     current_block_index = layout_block_list.index(current_block_name)
+        #     print "current_block_index", current_block_index
+        #     next_layout_block = layout_block_list.index[current_block_index + 1]
+        #     print "next_layout_block", next_layout_block
+        #     return next_layout_block.getUserName()
+        # except:
+        #     return ""
+
+
+
 
 class RunDispatcherMaster(jmri.jmrit.automat.AbstractAutomaton ):
 
@@ -115,7 +284,6 @@ class RunDispatcherMaster(jmri.jmrit.automat.AbstractAutomaton ):
         sensors.getSensor("timetableSensor").setKnownState(INACTIVE)
         sensors.getSensor("departureTimeSensor").setKnownState(INACTIVE)
         sensors.getSensor("helpSensor").setKnownState(INACTIVE)
-
         global stored_simulate
         if 'stored_simulate' in globals():
             if stored_simulate == ACTIVE:
@@ -128,6 +296,63 @@ class RunDispatcherMaster(jmri.jmrit.automat.AbstractAutomaton ):
             # StopMaster().remove_all_trains_from_trains_allocated()
 
         self.update_operations_routes_and_locations()
+        self.block_listeners = {} # To store listeners for later removal
+        self.setup_direction_labels_and_listeners()
+
+
+    def setup_direction_labels_and_listeners(self):
+        self.logLevel = 0
+        editorManager = jmri.InstanceManager.getDefault(jmri.jmrit.display.EditorManager)
+        for editor in editorManager.getAll():
+            if isinstance(editor, jmri.jmrit.display.layoutEditor.LayoutEditor) and editor.getTitle() != 'Dispatcher System':
+                # Build the direction_labels_map from existing PositionableLabels on the panel
+                # This assumes CreateIcons.py has already run and the panel was saved.
+                for item in editor.getContents():
+                    if isinstance(item, jmri.jmrit.display.PositionableLabel):
+                        if self.logLevel > 0: print "name", item.getId()
+                    if isinstance(item, jmri.jmrit.display.PositionableLabel) and item.getId() and item.getId().startswith("PL_DIRECTION_"):
+                        block_name = item.getId().replace("PL_DIRECTION_", "").replace("_", " ")
+                        direction_labels_map[block_name] = item
+                        if self.logLevel > 0: print "RunDispatchMaster: Found existing direction label for block:", block_name
+
+                if not direction_labels_map:
+                    if self.logLevel > 0: print "RunDispatchMaster: No direction labels found on the panel. Did CreateIcons.py run and was the panel saved?"
+                    return
+
+                # Now, add listeners to the Blocks
+                for block in blocks.getNamedBeanSet():
+                    block_name = block.getUserName()
+                    if block_name:
+                        # Construct the expected label name
+                        expected_label_name = "PL_DIRECTION_" + block_name.replace(" ", "_")
+
+                        # Find this label in the editor contents
+                        found_label = None
+                        for item in editor.getContents():
+                            if isinstance(item, jmri.jmrit.display.PositionableLabel):
+                                # print ("item", item)
+                                if item.getId() is not None:
+                                    if self.logLevel > 0: print("item.getId()", item.getId())
+                            if isinstance(item, jmri.jmrit.display.PositionableLabel) and item.getId() == expected_label_name:
+                                found_label = item
+                                break
+
+                        if found_label:
+                            direction_labels_map[block_name] = found_label
+                            listener = BlockChangeListener(block, direction_labels_map)
+                            block.addPropertyChangeListener("value", listener)
+                            self.block_listeners[block_name] = listener
+
+        self.logLevel = 0
+
+    def dispose(self):
+        # Remove listeners when RunDispatchMaster is stopped
+        for block_name, listener in self.block_listeners.items():
+            layoutBlock = jmri.InstanceManager.getDefault(jmri.jmrit.display.layoutEditor.LayoutBlockManager).getLayoutBlock(block_name)
+            if layoutBlock and layoutBlock.getBlock():
+                layoutBlock.getBlock().removePropertyChangeListener("value", listener)
+                if self.logLevel > 0: print "RunDispatchMaster: Removed listener from block:", block_name
+        super().dispose()
 
     def update_operations_routes_and_locations(self):
         # operations is used by dispatcher system
