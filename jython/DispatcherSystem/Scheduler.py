@@ -1980,7 +1980,7 @@ class TimeListener(java.beans.PropertyChangeListener):
         for train in train_list:
             comment = train.getComment()
             repeat_command = self.find_between(comment, "[repeat-", "-repeat]")
-            if self.logLevel > -1: print "train", train, "repeat_command", repeat_command
+            if self.logLevel > 0: print "train", train, "repeat_command", repeat_command
             max = int(minutes)
             min = (int(minutes) - 1)
             mid = int(train.getDepartTimeMinutes())
@@ -2602,7 +2602,6 @@ class RunRoute(jmri.jmrit.automat.AbstractAutomaton):
                         previous_time = int(round(time.time()))  # in secs
 
                     if self.scheduling_train:
-
                         self.wait_for_scheduled_time(self.route, previous_station_index, accumulated_duration, train_to_move)
                         # done when we know the transit name
                         # print "__________________________Start__" + train_to_move + "___________________________________"
@@ -2614,9 +2613,8 @@ class RunRoute(jmri.jmrit.automat.AbstractAutomaton):
                             transit_name = move_train.transit_name
                             print "__________________________End____" + train_to_move + "__transit: " + transit_name
                         else:
-                            print "failed to move train - no train in block - have waited for scheduling margin"
-                            transit_name = move_train.transit_name
-                            print "__________________________End____" + train_to_move + "__transit: " + transit_name
+                            print "failed to move train " + train_to_move " + " - no train in block - have waited for scheduling margin"
+                            print "__________________________End____" + train_to_move
                     else:
                         success = self.check_train_in_block_allow_manual_repositioning(train_to_move, self.station_from_name)
                         if success:
