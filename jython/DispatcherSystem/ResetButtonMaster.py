@@ -1825,7 +1825,7 @@ class MyTableModel1 (DefaultTableModel):
 class MonitorTrackMaster(jmri.jmrit.automat.AbstractAutomaton):
 
     # 1) ensure that the trains in the train list are being displayed on the panel if the block is occupied
-    # 2) ensure that a non allocated train and an allocated train cannot exist in the same edge
+    # 2) ensure that a non-allocated train and an allocated train cannot exist in the same edge
 
     global trains_allocated
     logLevel = 0
@@ -1846,7 +1846,7 @@ class MonitorTrackMaster(jmri.jmrit.automat.AbstractAutomaton):
         # ensure that the trains in the train list are being displayed on the panel if the block is occupied
         #
         # if the end block of the route is occupied
-        #   set th end block memname to the train_name
+        #   set the end block memname to the train_name
         if trains != {}:
             if self.logLevel > 0: print "trains", trains
             for train_name in trains:      #defaults tothe key which is the train name
@@ -1900,8 +1900,7 @@ class MonitorTrackMaster(jmri.jmrit.automat.AbstractAutomaton):
                                 if self.logLevel > 0: print "current_block", current_block,"block_occupancy", block_occupancy,
                                 self.set_mem_variable(current_block,train_name,block_occupancy)
                     else:
-                        #trai
-                        # n is moving under dispatch
+                        #train is moving under dispatch
                         #we note this
                         self.moved_under_dispatch[train_name] = True
 

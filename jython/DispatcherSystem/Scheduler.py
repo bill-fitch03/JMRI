@@ -2613,7 +2613,7 @@ class RunRoute(jmri.jmrit.automat.AbstractAutomaton):
                             transit_name = move_train.transit_name
                             print "__________________________End____" + train_to_move + "__transit: " + transit_name
                         else:
-                            print "failed to move train " + train_to_move " + " - no train in block - have waited for scheduling margin"
+                            print "failed to move train " + train_to_move + " - no train in block - have waited for scheduling margin"
                             print "__________________________End____" + train_to_move
                     else:
                         success = self.check_train_in_block_allow_manual_repositioning(train_to_move, self.station_from_name)

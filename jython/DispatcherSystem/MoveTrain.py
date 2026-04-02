@@ -1246,7 +1246,8 @@ class NewTrainMaster(jmri.jmrit.automat.AbstractAutomaton):
                         msg = "Select section"
                         sections_to_choose = self.get_non_allocated_trains_sections()
                         new_section_name = self.od.List(msg, sections_to_choose)
-                        if self.od.CLOSED_OPTION == False:
+                        print "new_section_name", new_section_name
+                        if self.od.CLOSED_OPTION == False and new_section_name is not None:
                             msg = "Select the train in " + new_section_name
                             trains_to_choose = self.get_non_allocated_trains()
                             if trains_to_choose == []:
@@ -1266,6 +1267,7 @@ class NewTrainMaster(jmri.jmrit.automat.AbstractAutomaton):
                             # Trigger the BlockChangeListener to update the label for the new dispatch
                             print "trigger block change for train", new_train_name, "block", current_block
                             self.trigger_block_change_listener(current_block, new_train_name)
+                            print "d"
                             return True
                     else:
                         if self.logLevel > 0 : print "!!!!5"
@@ -2399,7 +2401,7 @@ class createandshowGUI(TableModelListener):
                 current_block = blocks.getBlock(block_name)
                 # # Trigger the BlockChangeListener to update the label for the new dispatch
                 # print "trigger block change for train", train_name, "block", current_block
-                self.super.trigger_block_change_listener(current_block, train_name)
+                # self.super.trigger_block_change_listener(current_block, train_name)
                 self.model.data.pop(row)
 
         # print "end save action"
